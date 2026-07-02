@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: crm-appgom-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-crm_appgom}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-crm_appgom_dev}
+      POSTGRES_DB: ${DB_NAME:-crm_appgom}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - crm_appgom_pgdata:/var/lib/postgresql/data
+
+volumes:
+  crm_appgom_pgdata:
