@@ -41,7 +41,8 @@ Fase actual: **Fase 1 — Núcleo (MVP)**.
    docker compose up -d
    ```
 
-5. Correr las migraciones (crea las tablas `clientes`, `contratos`, `pagos`, `notificaciones_log`):
+5. Correr las migraciones (crea las tablas `clientes`, `contratos`, `pagos`, `notificaciones_log`,
+   `catalogo_servicios`, `cargos`):
    ```
    npm run migrate
    ```
@@ -66,23 +67,43 @@ Ver [.env.example](.env.example). No se versiona el archivo `.env` real.
 - `PUT /api/clientes/:id`
 - `DELETE /api/clientes/:id`
 
+### Catálogo de servicios
+- `GET /api/catalogo-servicios`
+- `POST /api/catalogo-servicios` — body: `{ nombre }`
+- `PUT /api/catalogo-servicios/:id` — body: `{ nombre, activo }`
+
 ### Contratos
 - `GET /api/contratos`
 - `GET /api/contratos/:id`
-- `POST /api/contratos` — body: `{ cliente_id, tipo_servicio, descripcion, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, estatus }`
+- `POST /api/contratos` — body: `{ cliente_id, tipo_servicio_id, descripcion, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, estatus, modalidad_facturacion }`
+  - `modalidad_facturacion` acepta: `recurrente` (default), `bolsa_horas`, `por_ticket`. Solo `recurrente`
+    genera cargos automáticos por ahora; las otras dos quedan reservadas en el modelo de datos para una
+    fase posterior.
+  - Al crear un contrato `recurrente` se genera automáticamente su primer `cargo` (el cobro del periodo
+    actual), con `fecha_vencimiento = fecha_proximo_vencimiento` y `monto = monto del contrato`.
 - `PUT /api/contratos/:id`
 - `DELETE /api/contratos/:id`
-- `GET /api/contratos/:id/saldo` — calcula saldo pendiente y días de atraso
+- `GET /api/contratos/:id/saldo` — saldo pendiente y días de atraso del cargo actual
+- `GET /api/contratos/:id/cargos` — historial de cargos (periodos de cobro) del contrato
 - `GET /api/contratos/:contratoId/pagos` — lista pagos de un contrato
 
 ### Pagos
-- `POST /api/pagos` — body: `{ contrato_id, fecha, monto, metodo, referencia }`
+- `POST /api/pagos` — body: `{ contrato_id | cargo_id, fecha, monto, metodo, referencia }`
+  - Se requiere `contrato_id` o `cargo_id` (si solo se manda `cargo_id`, el `contrato_id` se resuelve solo).
   - `metodo` acepta: `transferencia`, `efectivo`, `tarjeta`, `stripe` (este último queda listo para la integración de Fase 2)
+  - Al liquidar por completo un `cargo` de un contrato `recurrente` activo, el sistema avanza
+    `fecha_proximo_vencimiento` según la `periodicidad` y genera el siguiente cargo automáticamente.
+
+### Vencimientos
+- `GET /api/vencimientos` — "quién me debe / qué vence pronto": lista todos los cargos pendientes o
+  parciales con datos del cliente y del contrato, saldo pendiente y días de atraso.
 
 ## Pendiente (siguientes pasos de Fase 1)
 
-- Cron diario de recordatorios de vencimiento (correo vía Resend)
-- Vista de "quién me debe / qué vence pronto"
+- Cron diario de recordatorios de vencimiento (correo vía Resend): 3 avisos al cliente (7 días antes,
+  el día del vencimiento, y ya vencido) y alerta al admin en cada uno de esos casos. Pendiente de la
+  API key de Resend.
+- Lógica de consumo para `bolsa_horas` y `por_ticket` (fase posterior).
 
 ## Despliegue a SiteGround
 

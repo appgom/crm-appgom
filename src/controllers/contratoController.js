@@ -1,5 +1,5 @@
 const contratoModel = require('../models/contratoModel');
-const pagoModel = require('../models/pagoModel');
+const cargoModel = require('../models/cargoModel');
 
 async function list(req, res) {
   const contratos = await contratoModel.findAll();
@@ -15,7 +15,7 @@ async function getOne(req, res) {
 async function create(req, res) {
   const {
     cliente_id,
-    tipo_servicio,
+    tipo_servicio_id,
     descripcion,
     numero_contrato,
     monto,
@@ -23,17 +23,18 @@ async function create(req, res) {
     fecha_inicio,
     fecha_proximo_vencimiento,
     estatus,
+    modalidad_facturacion,
   } = req.body;
 
-  if (!cliente_id || !tipo_servicio || !monto || !periodicidad || !fecha_inicio || !fecha_proximo_vencimiento) {
+  if (!cliente_id || !tipo_servicio_id || !monto || !periodicidad || !fecha_inicio || !fecha_proximo_vencimiento) {
     return res.status(400).json({
-      error: 'cliente_id, tipo_servicio, monto, periodicidad, fecha_inicio y fecha_proximo_vencimiento son requeridos',
+      error: 'cliente_id, tipo_servicio_id, monto, periodicidad, fecha_inicio y fecha_proximo_vencimiento son requeridos',
     });
   }
 
   const contrato = await contratoModel.create({
     cliente_id,
-    tipo_servicio,
+    tipo_servicio_id,
     descripcion,
     numero_contrato,
     monto,
@@ -41,6 +42,7 @@ async function create(req, res) {
     fecha_inicio,
     fecha_proximo_vencimiento,
     estatus,
+    modalidad_facturacion,
   });
   res.status(201).json(contrato);
 }
@@ -51,7 +53,7 @@ async function update(req, res) {
 
   const body = req.body;
   const contrato = await contratoModel.update(req.params.id, {
-    tipo_servicio: body.tipo_servicio ?? existente.tipo_servicio,
+    tipo_servicio_id: body.tipo_servicio_id ?? existente.tipo_servicio_id,
     descripcion: body.descripcion ?? existente.descripcion,
     numero_contrato: body.numero_contrato ?? existente.numero_contrato,
     monto: body.monto ?? existente.monto,
@@ -59,6 +61,7 @@ async function update(req, res) {
     fecha_inicio: body.fecha_inicio ?? existente.fecha_inicio,
     fecha_proximo_vencimiento: body.fecha_proximo_vencimiento ?? existente.fecha_proximo_vencimiento,
     estatus: body.estatus ?? existente.estatus,
+    modalidad_facturacion: body.modalidad_facturacion ?? existente.modalidad_facturacion,
   });
   res.json(contrato);
 }
@@ -73,24 +76,46 @@ async function saldo(req, res) {
   const contrato = await contratoModel.findById(req.params.id);
   if (!contrato) return res.status(404).json({ error: 'Contrato no encontrado' });
 
-  const totalPagado = await pagoModel.sumByContratoId(contrato.id);
-  const monto = Number(contrato.monto);
-  const saldoPendiente = Math.max(monto - totalPagado, 0);
+  const cargoPendiente = await cargoModel.findPendienteActual(contrato.id);
+
+  if (!cargoPendiente) {
+    return res.json({
+      contrato_id: contrato.id,
+      saldo_pendiente: 0,
+      cargo_pendiente: null,
+      dias_atraso: 0,
+      al_corriente: true,
+    });
+  }
+
+  const totalPagado = await cargoModel.sumPagosByCargoId(cargoPendiente.id);
+  const saldoPendiente = Math.max(Number(cargoPendiente.monto) - totalPagado, 0);
 
   const hoy = new Date();
-  const vencimiento = new Date(contrato.fecha_proximo_vencimiento);
+  const vencimiento = new Date(cargoPendiente.fecha_vencimiento);
   const msPorDia = 1000 * 60 * 60 * 24;
   const diasAtraso = Math.max(Math.floor((hoy - vencimiento) / msPorDia), 0);
 
   res.json({
     contrato_id: contrato.id,
-    monto,
-    total_pagado: totalPagado,
+    cargo_pendiente: {
+      id: cargoPendiente.id,
+      fecha_vencimiento: cargoPendiente.fecha_vencimiento,
+      monto: Number(cargoPendiente.monto),
+      total_pagado: totalPagado,
+      estatus: cargoPendiente.estatus,
+    },
     saldo_pendiente: saldoPendiente,
-    fecha_proximo_vencimiento: contrato.fecha_proximo_vencimiento,
     dias_atraso: diasAtraso,
     al_corriente: diasAtraso === 0 && saldoPendiente === 0,
   });
 }
 
-module.exports = { list, getOne, create, update, remove, saldo };
+async function cargos(req, res) {
+  const contrato = await contratoModel.findById(req.params.id);
+  if (!contrato) return res.status(404).json({ error: 'Contrato no encontrado' });
+  const lista = await cargoModel.findByContratoId(contrato.id);
+  res.json(lista);
+}
+
+module.exports = { list, getOne, create, update, remove, saldo, cargos };

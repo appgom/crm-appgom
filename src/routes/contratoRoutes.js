@@ -12,6 +12,7 @@ router.put('/:id', asyncHandler(contratoController.update));
 router.delete('/:id', asyncHandler(contratoController.remove));
 
 router.get('/:id/saldo', asyncHandler(contratoController.saldo));
+router.get('/:id/cargos', asyncHandler(contratoController.cargos));
 router.get('/:contratoId/pagos', asyncHandler(pagoController.listByContrato));
 
 module.exports = router;
