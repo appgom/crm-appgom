@@ -10,6 +10,7 @@
     "migrate": "node src/config/migrate.js"
   },
   "dependencies": {
+    "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "pg": "^8.13.1"

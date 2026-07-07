@@ -8,16 +8,16 @@ Fase actual: **Fase 1 — Núcleo (MVP)**.
 
 ## Stack
 
-- Node.js + Express
-- PostgreSQL (vía Docker)
-- pg (driver nativo, sin ORM)
+- Backend: Node.js + Express + PostgreSQL (vía Docker), pg (driver nativo, sin ORM)
+- Frontend: React + Vite + Tailwind CSS (carpeta `frontend/`), diseño basado en el
+  prediseño de [Google Stitch](prompt-frontend-prediseno.md)
 
 ## Requisitos
 
 - Node.js v20 o superior
 - Docker Desktop (para levantar PostgreSQL localmente)
 
-## Instalación en una máquina nueva
+## Backend — Instalación en una máquina nueva
 
 1. Clonar el repositorio:
    ```
@@ -97,6 +97,31 @@ Ver [.env.example](.env.example). No se versiona el archivo `.env` real.
 ### Vencimientos
 - `GET /api/vencimientos` — "quién me debe / qué vence pronto": lista todos los cargos pendientes o
   parciales con datos del cliente y del contrato, saldo pendiente y días de atraso.
+
+## Frontend — Instalación
+
+1. Instalar dependencias:
+   ```
+   cd frontend
+   npm install
+   ```
+2. Levantar el servidor de desarrollo (requiere el backend corriendo en `http://localhost:3000`):
+   ```
+   npm run dev
+   ```
+   Queda disponible en `http://localhost:5173`.
+
+Por defecto el frontend consume la API en `http://localhost:3000/api`. Para apuntar a otra URL,
+crea `frontend/.env` con `VITE_API_URL=http://tu-host/api`.
+
+### Páginas implementadas
+- Dashboard (KPIs + vencimientos próximos)
+- Clientes (listado + alta)
+- Detalle de cliente (info + contratos asociados)
+- Contratos (listado con filtros + alta)
+- Detalle de contrato (saldo, historial de pagos, registrar pago)
+- Cuentas por cobrar (todos los cargos pendientes)
+- Configuración (catálogo de servicios editable)
 
 ## Pendiente (siguientes pasos de Fase 1)
 
