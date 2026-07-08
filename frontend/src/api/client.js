@@ -2,9 +2,14 @@ export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/a
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
+    credentials: 'include',
     headers: options.body instanceof FormData ? undefined : { 'Content-Type': 'application/json' },
     ...options,
   });
+
+  if (res.status === 401) {
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
