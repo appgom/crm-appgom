@@ -7,12 +7,14 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "migrate": "node src/config/migrate.js"
+    "migrate": "node src/config/migrate.js",
+    "recordatorios": "node src/jobs/enviarRecordatorios.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "nodemailer": "^9.0.3",
     "pg": "^8.13.1"
   }
 }

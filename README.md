@@ -123,11 +123,28 @@ crea `frontend/.env` con `VITE_API_URL=http://tu-host/api`.
 - Cuentas por cobrar (todos los cargos pendientes)
 - Configuración (catálogo de servicios editable)
 
+## Recordatorios por correo
+
+Usa SMTP directo (nodemailer) contra el servidor de correo de SiteGround — configurar
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` y `ADMIN_EMAIL` en `.env`.
+
+Ejecutar manualmente:
+```
+npm run recordatorios
+```
+
+Revisa todos los cargos pendientes/parciales y envía, tanto al cliente como al `ADMIN_EMAIL`:
+- 7 días antes del vencimiento
+- El día del vencimiento
+- Un día después (vencido)
+
+Cada aviso se registra en `notificaciones_log` (por `cargo_id` + `momento` + `tipo`) para no
+duplicarse si el job se corre más de una vez el mismo día. Pendiente programarlo como cron
+diario una vez desplegado en SiteGround (cron nativo de Linux).
+
 ## Pendiente (siguientes pasos de Fase 1)
 
-- Cron diario de recordatorios de vencimiento (correo vía Resend): 3 avisos al cliente (7 días antes,
-  el día del vencimiento, y ya vencido) y alerta al admin en cada uno de esos casos. Pendiente de la
-  API key de Resend.
+- Programar `npm run recordatorios` como cron diario en SiteGround.
 - Lógica de consumo para `bolsa_horas` y `por_ticket` (fase posterior).
 
 ## Despliegue a SiteGround
