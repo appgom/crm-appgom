@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
 import { api } from '../api/client';
@@ -8,6 +9,7 @@ function formatMoney(n) {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [vencimientos, setVencimientos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -89,7 +91,11 @@ export default function DashboardPage() {
                 </tr>
               )}
               {vencimientos.map((v) => (
-                <tr key={v.cargo_id} className="hover:bg-surface-base transition-colors">
+                <tr
+                  key={v.cargo_id}
+                  onClick={() => navigate(`/contratos/${v.contrato_id}`)}
+                  className="hover:bg-surface-base transition-colors cursor-pointer"
+                >
                   <td className="px-6 py-4 font-semibold text-text-main">{v.cliente_nombre}</td>
                   <td className="px-6 py-4 text-text-main">{v.tipo_servicio}</td>
                   <td className="px-6 py-4 text-text-main text-right font-semibold">{formatMoney(v.saldo_pendiente)}</td>

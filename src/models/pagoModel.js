@@ -3,9 +3,33 @@ const cargoModel = require('./cargoModel');
 const contratoModel = require('./contratoModel');
 const { sumarPeriodicidad } = require('../utils/periodicidad');
 
+async function findById(id) {
+  const { rows } = await pool.query('SELECT * FROM pagos WHERE id = $1', [id]);
+  return rows[0];
+}
+
 async function findByContratoId(contratoId) {
   const { rows } = await pool.query(
-    'SELECT * FROM pagos WHERE contrato_id = $1 ORDER BY fecha',
+    `SELECT
+      p.id AS pago_id,
+      p.fecha,
+      p.monto AS monto_total,
+      p.metodo,
+      p.referencia,
+      p.comprobante_nombre_original,
+      pa.monto AS monto_aplicado,
+      pa.cargo_id,
+      (
+        SELECT json_agg(json_build_object('contrato_id', c2.id, 'tipo_servicio', cs2.nombre, 'monto', pa2.monto))
+        FROM pago_aplicaciones pa2
+        JOIN contratos c2 ON c2.id = pa2.contrato_id
+        JOIN catalogo_servicios cs2 ON cs2.id = c2.tipo_servicio_id
+        WHERE pa2.pago_id = p.id AND pa2.contrato_id != $1
+      ) AS otros_servicios
+    FROM pago_aplicaciones pa
+    JOIN pagos p ON p.id = pa.pago_id
+    WHERE pa.contrato_id = $1
+    ORDER BY p.fecha DESC`,
     [contratoId]
   );
   return rows;
@@ -13,32 +37,59 @@ async function findByContratoId(contratoId) {
 
 async function findByClienteId(clienteId) {
   const { rows } = await pool.query(
-    `SELECT p.*, c.tipo_servicio_id, cs.nombre AS tipo_servicio
-     FROM pagos p
-     JOIN contratos c ON c.id = p.contrato_id
-     JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
-     WHERE c.cliente_id = $1
-     ORDER BY p.fecha DESC`,
+    `SELECT
+      p.id AS pago_id,
+      p.fecha,
+      p.monto AS monto_total,
+      p.metodo,
+      p.referencia,
+      p.comprobante_nombre_original,
+      pa.monto AS monto_aplicado,
+      pa.contrato_id,
+      cs.nombre AS tipo_servicio,
+      (
+        SELECT json_agg(json_build_object('contrato_id', c2.id, 'tipo_servicio', cs2.nombre, 'monto', pa2.monto))
+        FROM pago_aplicaciones pa2
+        JOIN contratos c2 ON c2.id = pa2.contrato_id
+        JOIN catalogo_servicios cs2 ON cs2.id = c2.tipo_servicio_id
+        WHERE pa2.pago_id = p.id AND pa2.contrato_id != pa.contrato_id
+      ) AS otros_servicios
+    FROM pago_aplicaciones pa
+    JOIN pagos p ON p.id = pa.pago_id
+    JOIN contratos c ON c.id = pa.contrato_id
+    JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
+    WHERE c.cliente_id = $1
+    ORDER BY p.fecha DESC`,
     [clienteId]
   );
   return rows;
 }
 
-async function create({ contrato_id, cargo_id, fecha, monto, metodo, referencia }) {
+async function create({ fecha, metodo, referencia, comprobante_nombre_original, comprobante_nombre_archivo, aplicaciones }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    const { rows } = await client.query(
-      `INSERT INTO pagos (contrato_id, cargo_id, fecha, monto, metodo, referencia)
+    const montoTotal = aplicaciones.reduce((sum, a) => sum + Number(a.monto), 0);
+
+    const { rows: pagoRows } = await client.query(
+      `INSERT INTO pagos (fecha, monto, metodo, referencia, comprobante_nombre_original, comprobante_nombre_archivo)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [contrato_id, cargo_id, fecha, monto, metodo, referencia]
+      [fecha, montoTotal, metodo, referencia, comprobante_nombre_original || null, comprobante_nombre_archivo || null]
     );
-    const pago = rows[0];
+    const pago = pagoRows[0];
 
-    if (cargo_id) {
-      await liquidarCargoSiCorresponde(cargo_id, client);
+    for (const aplicacion of aplicaciones) {
+      await client.query(
+        `INSERT INTO pago_aplicaciones (pago_id, contrato_id, cargo_id, monto)
+         VALUES ($1, $2, $3, $4)`,
+        [pago.id, aplicacion.contrato_id, aplicacion.cargo_id || null, aplicacion.monto]
+      );
+
+      if (aplicacion.cargo_id) {
+        await liquidarCargoSiCorresponde(aplicacion.cargo_id, client);
+      }
     }
 
     await client.query('COMMIT');
@@ -77,4 +128,4 @@ async function liquidarCargoSiCorresponde(cargoId, client) {
   }
 }
 
-module.exports = { findByContratoId, findByClienteId, create };
+module.exports = { findById, findByContratoId, findByClienteId, create };

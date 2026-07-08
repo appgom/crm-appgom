@@ -91,11 +91,21 @@ Ver [.env.example](.env.example). No se versiona el archivo `.env` real.
 - `GET /api/contratos/:contratoId/pagos` — lista pagos de un contrato
 
 ### Pagos
-- `POST /api/pagos` — body: `{ contrato_id | cargo_id, fecha, monto, metodo, referencia }`
-  - Se requiere `contrato_id` o `cargo_id` (si solo se manda `cargo_id`, el `contrato_id` se resuelve solo).
+Un pago es una sola transacción (un comprobante) que puede dividirse entre varios contratos —
+por ejemplo, el cliente paga hosting y dominio en una sola transferencia. `pagos` guarda la
+transacción (fecha, monto total, método, referencia, comprobante); `pago_aplicaciones` guarda a
+qué contrato/cargo se aplicó cada parte del monto.
+
+- `POST /api/pagos` — multipart. Campos: `fecha`, `metodo`, `referencia`, `aplicaciones` (JSON string:
+  `[{ contrato_id, cargo_id, monto }, ...]`), `comprobante` (archivo opcional, PDF/PNG/JPG hasta 5MB).
   - `metodo` acepta: `transferencia`, `efectivo`, `tarjeta`, `stripe` (este último queda listo para la integración de Fase 2)
   - Al liquidar por completo un `cargo` de un contrato `recurrente` activo, el sistema avanza
     `fecha_proximo_vencimiento` según la `periodicidad` y genera el siguiente cargo automáticamente.
+- `GET /api/pagos/:id/comprobante` — descarga el comprobante adjunto a la transacción.
+- `GET /api/contratos/:contratoId/pagos` y `GET /api/clientes/:id/pagos` incluyen `otros_servicios`:
+  los demás contratos cubiertos por el mismo pago, para dejar claro cuando un pago fue compartido.
+- `GET /api/clientes/:id/cargos-pendientes` — cargos pendientes/parciales del cliente, usado por el
+  formulario de registro de pago para ofrecer "aplicar también a otro servicio".
 
 ### Vencimientos
 - `GET /api/vencimientos` — "quién me debe / qué vence pronto": lista todos los cargos pendientes o

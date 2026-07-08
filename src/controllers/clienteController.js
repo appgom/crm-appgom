@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const clienteModel = require('../models/clienteModel');
+const cargoModel = require('../models/cargoModel');
 const { CSF_DIR } = require('../config/upload');
 
 async function list(req, res) {
@@ -70,4 +71,9 @@ async function descargarCsf(req, res) {
   res.download(path.join(CSF_DIR, cliente.csf_nombre_archivo), cliente.csf_nombre_original);
 }
 
-module.exports = { list, getOne, create, update, remove, subirCsf, descargarCsf };
+async function cargosPendientes(req, res) {
+  const cargos = await cargoModel.findPendientesByClienteId(req.params.id);
+  res.json(cargos);
+}
+
+module.exports = { list, getOne, create, update, remove, subirCsf, descargarCsf, cargosPendientes };

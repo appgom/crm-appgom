@@ -137,8 +137,8 @@ export default function ClienteDetailPage() {
             <p className="font-body-md text-body-md text-text-main whitespace-pre-line">{cliente.direccion_fiscal || '—'}</p>
           </div>
           <div>
-            <p className="font-label-md text-label-md text-text-muted">Dirección para envío de facturas</p>
-            <p className="font-body-md text-body-md text-text-main whitespace-pre-line">{cliente.direccion_envio_facturas || '—'}</p>
+            <p className="font-label-md text-label-md text-text-muted">Correo para envío de facturas</p>
+            <p className="font-body-md text-body-md text-text-main">{cliente.direccion_envio_facturas || '—'}</p>
           </div>
         </div>
 
@@ -237,21 +237,39 @@ export default function ClienteDetailPage() {
                 <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider text-right">Monto</th>
                 <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Método</th>
                 <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Referencia</th>
+                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Comprobante</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {pagos.length === 0 && (
                 <tr>
-                  <td className="px-8 py-6 text-secondary" colSpan={5}>Sin pagos registrados.</td>
+                  <td className="px-8 py-6 text-secondary" colSpan={6}>Sin pagos registrados.</td>
                 </tr>
               )}
               {pagos.map((p) => (
-                <tr key={p.id} className="hover:bg-surface-base transition-colors">
+                <tr key={`${p.pago_id}-${p.contrato_id}`} className="hover:bg-surface-base transition-colors">
                   <td className="px-8 py-4 text-text-main">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
-                  <td className="px-8 py-4 text-text-main">{p.tipo_servicio}</td>
-                  <td className="px-8 py-4 text-right font-bold text-text-main">{formatMoney(p.monto)}</td>
+                  <td className="px-8 py-4 text-text-main">
+                    {p.tipo_servicio}
+                    {p.otros_servicios?.length > 0 && (
+                      <span className="block text-xs text-action-blue">
+                        + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-8 py-4 text-right font-bold text-text-main">{formatMoney(p.monto_aplicado)}</td>
                   <td className="px-8 py-4 capitalize">{p.metodo}</td>
                   <td className="px-8 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
+                  <td className="px-8 py-4">
+                    {p.comprobante_nombre_original ? (
+                      <a href={`${BASE_URL}/pagos/${p.pago_id}/comprobante`} className="text-action-blue hover:underline flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px]">attachment</span>
+                        Ver
+                      </a>
+                    ) : (
+                      <span className="text-text-muted">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

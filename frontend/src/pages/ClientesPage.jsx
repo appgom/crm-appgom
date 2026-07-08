@@ -365,9 +365,10 @@ export function ClienteFormModal({ cliente, onClose, onSaved }) {
               />
             </div>
             <div className="space-y-2">
-              <label className="font-label-md text-label-md text-secondary block">Dirección para envío de facturas</label>
-              <textarea
-                rows={2}
+              <label className="font-label-md text-label-md text-secondary block">Correo para envío de facturas</label>
+              <input
+                type="email"
+                placeholder="facturacion@empresa.com"
                 className="w-full bg-surface-base border border-border-subtle rounded-lg px-4 py-2.5 text-body-md outline-none focus:ring-2 focus:ring-action-blue"
                 value={form.direccion_envio_facturas}
                 onChange={(e) => setForm({ ...form, direccion_envio_facturas: e.target.value })}

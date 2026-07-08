@@ -118,10 +118,12 @@ export default function VencimientosPage() {
 
       {pagando && (
         <RegistrarPagoModal
+          clienteId={pagando.cliente_id}
+          clienteNombre={pagando.cliente_nombre}
           contratoId={pagando.contrato_id}
           cargoId={pagando.cargo_id}
+          tipoServicio={pagando.tipo_servicio}
           montoSugerido={pagando.saldo_pendiente}
-          contexto={`${pagando.tipo_servicio} — ${pagando.cliente_nombre}`}
           onClose={() => setPagando(null)}
           onSaved={() => {
             setPagando(null);

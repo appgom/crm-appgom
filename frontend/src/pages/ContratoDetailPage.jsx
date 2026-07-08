@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import RegistrarPagoModal from '../components/RegistrarPagoModal';
 import { ConfirmDialog } from './ClientesPage';
-import { api } from '../api/client';
+import { api, BASE_URL } from '../api/client';
 
 function formatMoney(n) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -164,23 +164,44 @@ export default function ContratoDetailPage() {
             <thead className="bg-surface-base/50">
               <tr>
                 <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
+                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto aplicado</th>
                 <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Método</th>
                 <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Referencia</th>
+                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Comprobante</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {pagos.length === 0 && (
                 <tr>
-                  <td className="px-6 py-6 text-secondary" colSpan={4}>Sin pagos registrados.</td>
+                  <td className="px-6 py-6 text-secondary" colSpan={5}>Sin pagos registrados.</td>
                 </tr>
               )}
               {pagos.map((p) => (
-                <tr key={p.id} className="hover:bg-surface-base transition-colors">
+                <tr key={p.pago_id} className="hover:bg-surface-base transition-colors">
                   <td className="px-6 py-4 text-on-surface">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
-                  <td className="px-6 py-4 font-bold text-on-surface text-right">{formatMoney(p.monto)}</td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="font-bold text-on-surface">{formatMoney(p.monto_aplicado)}</span>
+                    {p.otros_servicios?.length > 0 && (
+                      <span className="block text-xs text-action-blue">
+                        + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')} ({formatMoney(p.monto_total)} total)
+                      </span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 capitalize">{p.metodo}</td>
                   <td className="px-6 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
+                  <td className="px-6 py-4">
+                    {p.comprobante_nombre_original ? (
+                      <a
+                        href={`${BASE_URL}/pagos/${p.pago_id}/comprobante`}
+                        className="text-action-blue hover:underline flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">attachment</span>
+                        Ver
+                      </a>
+                    ) : (
+                      <span className="text-text-muted">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -190,10 +211,12 @@ export default function ContratoDetailPage() {
 
       {showModal && (
         <RegistrarPagoModal
+          clienteId={cliente?.id}
+          clienteNombre={cliente?.nombre}
           contratoId={contrato.id}
           cargoId={saldo?.cargo_pendiente?.id}
+          tipoServicio={servicio?.nombre}
           montoSugerido={saldo?.cargo_pendiente?.monto ?? contrato.monto}
-          contexto={`${servicio?.nombre} — ${cliente?.nombre}`}
           onClose={() => setShowModal(false)}
           onSaved={() => {
             setShowModal(false);

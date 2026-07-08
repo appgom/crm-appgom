@@ -16,5 +16,6 @@ router.post('/:id/csf', uploadCsf.single('csf'), asyncHandler(clienteController.
 router.get('/:id/csf', asyncHandler(clienteController.descargarCsf));
 
 router.get('/:id/pagos', asyncHandler(pagoController.listByCliente));
+router.get('/:id/cargos-pendientes', asyncHandler(clienteController.cargosPendientes));
 
 module.exports = router;

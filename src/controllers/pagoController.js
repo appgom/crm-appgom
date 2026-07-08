@@ -1,6 +1,7 @@
-const pool = require('../config/db');
+const path = require('path');
 const pagoModel = require('../models/pagoModel');
 const contratoModel = require('../models/contratoModel');
+const { COMPROBANTES_DIR } = require('../config/upload');
 
 async function listByContrato(req, res) {
   const pagos = await pagoModel.findByContratoId(req.params.contratoId);
@@ -13,26 +14,44 @@ async function listByCliente(req, res) {
 }
 
 async function create(req, res) {
-  const { fecha, monto, metodo, referencia } = req.body;
-  let { contrato_id, cargo_id } = req.body;
+  const { fecha, metodo, referencia } = req.body;
+  let aplicaciones;
 
-  if (!fecha || !monto || !metodo || (!contrato_id && !cargo_id)) {
-    return res.status(400).json({
-      error: 'fecha, monto, metodo y (contrato_id o cargo_id) son requeridos',
-    });
+  try {
+    aplicaciones = typeof req.body.aplicaciones === 'string' ? JSON.parse(req.body.aplicaciones) : req.body.aplicaciones;
+  } catch {
+    return res.status(400).json({ error: 'aplicaciones debe ser un JSON válido' });
   }
 
-  if (cargo_id && !contrato_id) {
-    const { rows } = await pool.query('SELECT contrato_id FROM cargos WHERE id = $1', [cargo_id]);
-    if (!rows[0]) return res.status(404).json({ error: 'Cargo no encontrado' });
-    contrato_id = rows[0].contrato_id;
+  if (!fecha || !metodo || !Array.isArray(aplicaciones) || aplicaciones.length === 0) {
+    return res.status(400).json({ error: 'fecha, metodo y al menos una aplicación (contrato_id/cargo_id, monto) son requeridos' });
   }
 
-  const contrato = await contratoModel.findById(contrato_id);
-  if (!contrato) return res.status(404).json({ error: 'Contrato no encontrado' });
+  for (const aplicacion of aplicaciones) {
+    if (!aplicacion.contrato_id || !aplicacion.monto || Number(aplicacion.monto) <= 0) {
+      return res.status(400).json({ error: 'Cada aplicación requiere contrato_id y monto mayor a 0' });
+    }
+    const contrato = await contratoModel.findById(aplicacion.contrato_id);
+    if (!contrato) return res.status(404).json({ error: `Contrato ${aplicacion.contrato_id} no encontrado` });
+  }
 
-  const pago = await pagoModel.create({ contrato_id, cargo_id: cargo_id || null, fecha, monto, metodo, referencia });
+  const pago = await pagoModel.create({
+    fecha,
+    metodo,
+    referencia,
+    comprobante_nombre_original: req.file?.originalname,
+    comprobante_nombre_archivo: req.file?.filename,
+    aplicaciones,
+  });
   res.status(201).json(pago);
 }
 
-module.exports = { listByContrato, listByCliente, create };
+async function descargarComprobante(req, res) {
+  const pago = await pagoModel.findById(req.params.id);
+  if (!pago || !pago.comprobante_nombre_archivo) {
+    return res.status(404).json({ error: 'Este pago no tiene comprobante adjunto' });
+  }
+  res.download(path.join(COMPROBANTES_DIR, pago.comprobante_nombre_archivo), pago.comprobante_nombre_original);
+}
+
+module.exports = { listByContrato, listByCliente, create, descargarComprobante };

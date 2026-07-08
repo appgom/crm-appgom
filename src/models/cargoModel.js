@@ -39,10 +39,30 @@ async function updateEstatus(id, estatus, client = pool) {
 
 async function sumPagosByCargoId(cargoId, client = pool) {
   const { rows } = await client.query(
-    'SELECT COALESCE(SUM(monto), 0) AS total FROM pagos WHERE cargo_id = $1',
+    'SELECT COALESCE(SUM(monto), 0) AS total FROM pago_aplicaciones WHERE cargo_id = $1',
     [cargoId]
   );
   return Number(rows[0].total);
+}
+
+async function findPendientesByClienteId(clienteId) {
+  const { rows } = await pool.query(
+    `SELECT
+      cg.id AS cargo_id,
+      cg.fecha_vencimiento,
+      cg.monto,
+      cg.estatus,
+      c.id AS contrato_id,
+      cs.nombre AS tipo_servicio,
+      COALESCE((SELECT SUM(monto) FROM pago_aplicaciones WHERE cargo_id = cg.id), 0) AS total_pagado
+    FROM cargos cg
+    JOIN contratos c ON c.id = cg.contrato_id
+    JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
+    WHERE c.cliente_id = $1 AND cg.estatus IN ('pendiente', 'parcial')
+    ORDER BY cg.fecha_vencimiento`,
+    [clienteId]
+  );
+  return rows;
 }
 
 async function findPendientesConDetalle() {
@@ -59,7 +79,7 @@ async function findPendientesConDetalle() {
       cl.id AS cliente_id,
       cl.nombre AS cliente_nombre,
       cl.email AS cliente_email,
-      COALESCE((SELECT SUM(monto) FROM pagos WHERE cargo_id = cg.id), 0) AS total_pagado
+      COALESCE((SELECT SUM(monto) FROM pago_aplicaciones WHERE cargo_id = cg.id), 0) AS total_pagado
     FROM cargos cg
     JOIN contratos c ON c.id = cg.contrato_id
     JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
@@ -73,6 +93,7 @@ async function findPendientesConDetalle() {
 module.exports = {
   findByContratoId,
   findPendienteActual,
+  findPendientesByClienteId,
   create,
   updateEstatus,
   sumPagosByCargoId,
