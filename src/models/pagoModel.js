@@ -11,6 +11,19 @@ async function findByContratoId(contratoId) {
   return rows;
 }
 
+async function findByClienteId(clienteId) {
+  const { rows } = await pool.query(
+    `SELECT p.*, c.tipo_servicio_id, cs.nombre AS tipo_servicio
+     FROM pagos p
+     JOIN contratos c ON c.id = p.contrato_id
+     JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
+     WHERE c.cliente_id = $1
+     ORDER BY p.fecha DESC`,
+    [clienteId]
+  );
+  return rows;
+}
+
 async function create({ contrato_id, cargo_id, fecha, monto, metodo, referencia }) {
   const client = await pool.connect();
   try {
@@ -64,4 +77,4 @@ async function liquidarCargoSiCorresponde(cargoId, client) {
   }
 }
 
-module.exports = { findByContratoId, create };
+module.exports = { findByContratoId, findByClienteId, create };

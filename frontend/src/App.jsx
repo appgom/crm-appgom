@@ -17,6 +17,7 @@ export default function App() {
         <Route path="/clientes/:id" element={<ClienteDetailPage />} />
         <Route path="/contratos" element={<ContratosPage />} />
         <Route path="/contratos/nuevo" element={<NuevoContratoPage />} />
+        <Route path="/contratos/:id/editar" element={<NuevoContratoPage />} />
         <Route path="/contratos/:id" element={<ContratoDetailPage />} />
         <Route path="/vencimientos" element={<VencimientosPage />} />
         <Route path="/configuracion" element={<ConfiguracionPage />} />

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
 
 const clienteRoutes = require('./routes/clienteRoutes');
 const contratoRoutes = require('./routes/contratoRoutes');
@@ -22,6 +23,9 @@ app.use('/api/vencimientos', vencimientoRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
+  if (err instanceof multer.MulterError || /Solo se aceptan archivos/.test(err.message)) {
+    return res.status(400).json({ error: err.message });
+  }
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 

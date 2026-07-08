@@ -18,10 +18,22 @@ async function create({ nombre, email, telefono }) {
   return rows[0];
 }
 
-async function update(id, { nombre, email, telefono }) {
+async function update(id, { nombre, email, telefono, razon_social, rfc, direccion_fiscal, direccion_envio_facturas }) {
   const { rows } = await pool.query(
-    'UPDATE clientes SET nombre = $1, email = $2, telefono = $3 WHERE id = $4 RETURNING *',
-    [nombre, email, telefono, id]
+    `UPDATE clientes SET
+      nombre = $1, email = $2, telefono = $3,
+      razon_social = $4, rfc = $5, direccion_fiscal = $6, direccion_envio_facturas = $7
+     WHERE id = $8
+     RETURNING *`,
+    [nombre, email, telefono, razon_social, rfc, direccion_fiscal, direccion_envio_facturas, id]
+  );
+  return rows[0];
+}
+
+async function actualizarCsf(id, { csf_nombre_original, csf_nombre_archivo }) {
+  const { rows } = await pool.query(
+    'UPDATE clientes SET csf_nombre_original = $1, csf_nombre_archivo = $2 WHERE id = $3 RETURNING *',
+    [csf_nombre_original, csf_nombre_archivo, id]
   );
   return rows[0];
 }
@@ -31,4 +43,4 @@ async function remove(id) {
   return rows[0];
 }
 
-module.exports = { findAll, findById, create, update, remove };
+module.exports = { findAll, findById, create, update, actualizarCsf, remove };

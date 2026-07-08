@@ -7,6 +7,11 @@ async function listByContrato(req, res) {
   res.json(pagos);
 }
 
+async function listByCliente(req, res) {
+  const pagos = await pagoModel.findByClienteId(req.params.id);
+  res.json(pagos);
+}
+
 async function create(req, res) {
   const { fecha, monto, metodo, referencia } = req.body;
   let { contrato_id, cargo_id } = req.body;
@@ -30,4 +35,4 @@ async function create(req, res) {
   res.status(201).json(pago);
 }
 
-module.exports = { listByContrato, create };
+module.exports = { listByContrato, listByCliente, create };

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { api } from '../api/client';
 
 export default function NuevoContratoPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const esEdicion = Boolean(id);
   const [searchParams] = useSearchParams();
   const clientePreseleccionado = searchParams.get('cliente_id') || '';
 
@@ -20,28 +22,53 @@ export default function NuevoContratoPage() {
     fecha_inicio: new Date().toISOString().slice(0, 10),
     fecha_proximo_vencimiento: new Date().toISOString().slice(0, 10),
     modalidad_facturacion: 'recurrente',
+    estatus: 'activo',
   });
+  const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([api.get('/clientes'), api.get('/catalogo-servicios')]).then(([clientesData, serviciosData]) => {
-      setClientes(clientesData);
-      setServicios(serviciosData.filter((s) => s.activo));
-    });
-  }, []);
+    const promesas = [api.get('/clientes'), api.get('/catalogo-servicios')];
+    if (esEdicion) promesas.push(api.get(`/contratos/${id}`));
+
+    Promise.all(promesas)
+      .then(([clientesData, serviciosData, contratoData]) => {
+        setClientes(clientesData);
+        setServicios(serviciosData.filter((s) => s.activo));
+        if (contratoData) {
+          setForm({
+            cliente_id: contratoData.cliente_id,
+            tipo_servicio_id: contratoData.tipo_servicio_id,
+            numero_contrato: contratoData.numero_contrato || '',
+            descripcion: contratoData.descripcion || '',
+            monto: contratoData.monto,
+            periodicidad: contratoData.periodicidad,
+            fecha_inicio: contratoData.fecha_inicio.slice(0, 10),
+            fecha_proximo_vencimiento: contratoData.fecha_proximo_vencimiento.slice(0, 10),
+            modalidad_facturacion: contratoData.modalidad_facturacion,
+            estatus: contratoData.estatus,
+          });
+        }
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
     setError(null);
     try {
-      const contrato = await api.post('/contratos', {
+      const payload = {
         ...form,
         cliente_id: Number(form.cliente_id),
         tipo_servicio_id: Number(form.tipo_servicio_id),
         monto: Number(form.monto),
-      });
+      };
+      const contrato = esEdicion
+        ? await api.put(`/contratos/${id}`, payload)
+        : await api.post('/contratos', payload);
       navigate(`/contratos/${contrato.id}`);
     } catch (err) {
       setError(err.message);
@@ -49,13 +76,25 @@ export default function NuevoContratoPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <Layout>
+        <p className="text-secondary">Cargando...</p>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="w-full max-w-[800px] mx-auto bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-border-subtle">
-          <h2 className="font-headline-md text-headline-md text-on-surface">Nuevo contrato</h2>
+          <h2 className="font-headline-md text-headline-md text-on-surface">
+            {esEdicion ? 'Editar contrato' : 'Nuevo contrato'}
+          </h2>
           <p className="font-body-md text-body-md text-secondary">
-            Da de alta un contrato de servicio para un cliente existente.
+            {esEdicion
+              ? 'Actualiza los datos del contrato.'
+              : 'Da de alta un contrato de servicio para un cliente existente.'}
           </p>
         </div>
         <form className="p-8 space-y-8" onSubmit={handleSubmit}>
@@ -66,7 +105,8 @@ export default function NuevoContratoPage() {
               <label className="block font-label-md text-label-md text-secondary mb-2">Cliente</label>
               <select
                 required
-                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
+                disabled={esEdicion}
+                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base disabled:opacity-60"
                 value={form.cliente_id}
                 onChange={(e) => setForm({ ...form, cliente_id: e.target.value })}
               >
@@ -157,7 +197,9 @@ export default function NuevoContratoPage() {
               />
             </div>
             <div>
-              <label className="block font-label-md text-label-md text-secondary mb-2">Primer vencimiento</label>
+              <label className="block font-label-md text-label-md text-secondary mb-2">
+                {esEdicion ? 'Próximo vencimiento' : 'Primer vencimiento'}
+              </label>
               <input
                 type="date"
                 required
@@ -165,7 +207,25 @@ export default function NuevoContratoPage() {
                 value={form.fecha_proximo_vencimiento}
                 onChange={(e) => setForm({ ...form, fecha_proximo_vencimiento: e.target.value })}
               />
+              {esEdicion && (
+                <p className="text-xs text-text-muted mt-1">
+                  Normalmente avanza solo al liquidar un cargo. Ajústalo aquí solo si necesitas corregirlo manualmente.
+                </p>
+              )}
             </div>
+            {esEdicion && (
+              <div>
+                <label className="block font-label-md text-label-md text-secondary mb-2">Estatus</label>
+                <select
+                  className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
+                  value={form.estatus}
+                  onChange={(e) => setForm({ ...form, estatus: e.target.value })}
+                >
+                  <option value="activo">Activo</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-4 pt-4 border-t border-border-subtle">
@@ -173,7 +233,7 @@ export default function NuevoContratoPage() {
               Cancelar
             </button>
             <button type="submit" disabled={saving} className="px-8 py-2.5 rounded-lg bg-action-blue text-white font-bold hover:bg-primary transition-all disabled:opacity-50">
-              {saving ? 'Guardando...' : 'Guardar contrato'}
+              {saving ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Guardar contrato'}
             </button>
           </div>
         </form>

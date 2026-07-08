@@ -64,8 +64,11 @@ Ver [.env.example](.env.example). No se versiona el archivo `.env` real.
 - `GET /api/clientes`
 - `GET /api/clientes/:id`
 - `POST /api/clientes` — body: `{ nombre, email, telefono }`
-- `PUT /api/clientes/:id`
+- `PUT /api/clientes/:id` — body: `{ nombre, email, telefono, razon_social, rfc, direccion_fiscal, direccion_envio_facturas }`
 - `DELETE /api/clientes/:id`
+- `POST /api/clientes/:id/csf` — multipart, campo `csf` (PDF/PNG/JPG, máx. 5MB). Guarda/reemplaza la Constancia de Situación Fiscal.
+- `GET /api/clientes/:id/csf` — descarga la CSF cargada
+- `GET /api/clientes/:id/pagos` — historial de pagos del cliente en todos sus contratos
 
 ### Catálogo de servicios
 - `GET /api/catalogo-servicios`
