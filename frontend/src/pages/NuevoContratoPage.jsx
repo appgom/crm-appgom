@@ -87,7 +87,7 @@ export default function NuevoContratoPage() {
   return (
     <Layout>
       <div className="w-full max-w-[800px] mx-auto bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-border-subtle">
+        <div className="px-5 md:px-8 py-5 md:py-6 border-b border-border-subtle">
           <h2 className="font-headline-md text-headline-md text-on-surface">
             {esEdicion ? 'Editar contrato' : 'Nuevo contrato'}
           </h2>
@@ -97,11 +97,11 @@ export default function NuevoContratoPage() {
               : 'Da de alta un contrato de servicio para un cliente existente.'}
           </p>
         </div>
-        <form className="p-8 space-y-8" onSubmit={handleSubmit}>
+        <form className="p-5 md:p-8 space-y-6 md:space-y-8" onSubmit={handleSubmit}>
           {error && <p className="text-status-error text-sm">{error}</p>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="col-span-2 md:col-span-1">
+            <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">Cliente</label>
               <select
                 required
@@ -116,7 +116,7 @@ export default function NuevoContratoPage() {
                 ))}
               </select>
             </div>
-            <div className="col-span-2 md:col-span-1">
+            <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">Tipo de servicio</label>
               <select
                 required
@@ -130,7 +130,7 @@ export default function NuevoContratoPage() {
                 ))}
               </select>
             </div>
-            <div className="col-span-2">
+            <div className="md:col-span-2">
               <label className="block font-label-md text-label-md text-secondary mb-2">Descripción (opcional)</label>
               <input
                 className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
@@ -228,11 +228,11 @@ export default function NuevoContratoPage() {
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-4 pt-4 border-t border-border-subtle">
-            <button type="button" className="px-6 py-2.5 rounded-lg border border-border-subtle text-secondary font-bold hover:bg-surface-base" onClick={() => navigate(-1)}>
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sm:gap-4 pt-4 border-t border-border-subtle">
+            <button type="button" className="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-border-subtle text-secondary font-bold hover:bg-surface-base" onClick={() => navigate(-1)}>
               Cancelar
             </button>
-            <button type="submit" disabled={saving} className="px-8 py-2.5 rounded-lg bg-action-blue text-white font-bold hover:bg-primary transition-all disabled:opacity-50">
+            <button type="submit" disabled={saving} className="w-full sm:w-auto px-8 py-2.5 rounded-lg bg-action-blue text-white font-bold hover:bg-primary transition-all disabled:opacity-50">
               {saving ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Guardar contrato'}
             </button>
           </div>

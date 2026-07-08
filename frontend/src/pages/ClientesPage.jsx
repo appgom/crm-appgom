@@ -109,118 +109,192 @@ export default function ClientesPage() {
       {error && <p className="text-status-error">{error}</p>}
 
       <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden shadow-sm mt-6">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-base border-b border-border-subtle">
-                <th className="w-10"></th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Nombre</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Teléfono</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center">
-                  Contratos activos
-                </th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Estatus</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {loading && (
-                <tr>
-                  <td className="px-6 py-6 text-secondary" colSpan={7}>Cargando...</td>
-                </tr>
-              )}
-              {!loading && clientesPagina.length === 0 && (
-                <tr>
-                  <td className="px-6 py-6 text-secondary" colSpan={7}>Sin clientes registrados.</td>
-                </tr>
-              )}
+        {loading && <p className="px-6 py-6 text-secondary">Cargando...</p>}
+        {!loading && clientesPagina.length === 0 && (
+          <p className="px-6 py-6 text-secondary">Sin clientes registrados.</p>
+        )}
+
+        {!loading && clientesPagina.length > 0 && (
+          <>
+            {/* Tabla — desktop/tablet */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-base border-b border-border-subtle">
+                    <th className="w-10"></th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Nombre</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Teléfono</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center">
+                      Contratos activos
+                    </th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Estatus</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {clientesPagina.map((cliente) => {
+                    const expandido = expandidoId === cliente.id;
+                    const contratosCliente = contratos.filter((c) => c.cliente_id === cliente.id);
+                    return (
+                      <Fragment key={cliente.id}>
+                        <tr className="hover:bg-surface-base transition-colors">
+                          <td className="pl-4">
+                            <button
+                              className="p-1 text-secondary hover:text-action-blue"
+                              onClick={() => setExpandidoId(expandido ? null : cliente.id)}
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                {expandido ? 'expand_more' : 'chevron_right'}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Link to={`/clientes/${cliente.id}`} className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xs">
+                                {cliente.nombre.slice(0, 2).toUpperCase()}
+                              </div>
+                              <span className="font-bold text-on-surface hover:text-action-blue">{cliente.nombre}</span>
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 text-secondary">{cliente.email}</td>
+                          <td className="px-6 py-4 text-secondary">{cliente.telefono || '—'}</td>
+                          <td className="px-6 py-4 text-center font-mono-label">
+                            <button className="hover:text-action-blue hover:underline" onClick={() => setExpandidoId(expandido ? null : cliente.id)}>
+                              {cliente.contratosActivos}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <StatusBadge
+                              status={cliente.estatusGeneral}
+                              label={cliente.estatusGeneral === 'con_adeudo' ? 'Con adeudo' : 'Al corriente'}
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                title="Editar"
+                                className="p-1.5 text-secondary hover:text-action-blue hover:bg-surface-container-low rounded"
+                                onClick={() => setEditando(cliente)}
+                              >
+                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                              </button>
+                              <button
+                                title="Eliminar"
+                                className="p-1.5 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
+                                onClick={() => setEliminando(cliente)}
+                              >
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandido && (
+                          <tr className="bg-surface-base/60">
+                            <td></td>
+                            <td colSpan={6} className="px-6 pb-4 pt-1">
+                              {contratosCliente.length === 0 ? (
+                                <p className="text-secondary text-sm py-2">Este cliente no tiene contratos.</p>
+                              ) : (
+                                <div className="border border-border-subtle rounded-lg overflow-hidden bg-surface-card">
+                                  {contratosCliente.map((c) => (
+                                    <Link
+                                      key={c.id}
+                                      to={`/contratos/${c.id}`}
+                                      className="flex items-center justify-between px-4 py-2.5 border-b last:border-b-0 border-border-subtle hover:bg-surface-base transition-colors"
+                                    >
+                                      <span className="text-action-blue font-medium text-sm">{nombreServicio(c.tipo_servicio_id)}</span>
+                                      <span className="text-secondary text-xs">${Number(c.monto).toFixed(2)} · {c.periodicidad}</span>
+                                      <StatusBadge status={c.estatus} label={c.estatus} />
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tarjetas — movil */}
+            <div className="md:hidden divide-y divide-border-subtle">
               {clientesPagina.map((cliente) => {
                 const expandido = expandidoId === cliente.id;
                 const contratosCliente = contratos.filter((c) => c.cliente_id === cliente.id);
                 return (
-                  <Fragment key={cliente.id}>
-                    <tr className="hover:bg-surface-base transition-colors">
-                      <td className="pl-4">
-                        <button
-                          className="p-1 text-secondary hover:text-action-blue"
-                          onClick={() => setExpandidoId(expandido ? null : cliente.id)}
-                        >
-                          <span className="material-symbols-outlined text-[20px]">
-                            {expandido ? 'expand_more' : 'chevron_right'}
-                          </span>
-                        </button>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link to={`/clientes/${cliente.id}`} className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xs">
-                            {cliente.nombre.slice(0, 2).toUpperCase()}
-                          </div>
-                          <span className="font-bold text-on-surface hover:text-action-blue">{cliente.nombre}</span>
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 text-secondary">{cliente.email}</td>
-                      <td className="px-6 py-4 text-secondary">{cliente.telefono || '—'}</td>
-                      <td className="px-6 py-4 text-center font-mono-label">
-                        <button className="hover:text-action-blue hover:underline" onClick={() => setExpandidoId(expandido ? null : cliente.id)}>
-                          {cliente.contratosActivos}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge
-                          status={cliente.estatusGeneral}
-                          label={cliente.estatusGeneral === 'con_adeudo' ? 'Con adeudo' : 'Al corriente'}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            title="Editar"
-                            className="p-1.5 text-secondary hover:text-action-blue hover:bg-surface-container-low rounded"
-                            onClick={() => setEditando(cliente)}
-                          >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
-                          <button
-                            title="Eliminar"
-                            className="p-1.5 text-secondary hover:text-status-error hover:bg-red-50 rounded"
-                            onClick={() => setEliminando(cliente)}
-                          >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
+                  <div key={cliente.id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Link to={`/clientes/${cliente.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                          {cliente.nombre.slice(0, 2).toUpperCase()}
                         </div>
-                      </td>
-                    </tr>
+                        <div className="min-w-0">
+                          <p className="font-bold text-on-surface truncate">{cliente.nombre}</p>
+                          <p className="text-secondary text-xs truncate">{cliente.email}</p>
+                        </div>
+                      </Link>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          title="Editar"
+                          className="p-2 text-secondary hover:text-action-blue hover:bg-surface-container-low rounded"
+                          onClick={() => setEditando(cliente)}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
+                        <button
+                          title="Eliminar"
+                          className="p-2 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
+                          onClick={() => setEliminando(cliente)}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3">
+                      <StatusBadge
+                        status={cliente.estatusGeneral}
+                        label={cliente.estatusGeneral === 'con_adeudo' ? 'Con adeudo' : 'Al corriente'}
+                      />
+                      <button
+                        className="flex items-center gap-1 text-sm text-secondary"
+                        onClick={() => setExpandidoId(expandido ? null : cliente.id)}
+                      >
+                        {cliente.contratosActivos} contrato{cliente.contratosActivos === 1 ? '' : 's'}
+                        <span className="material-symbols-outlined text-[18px]">
+                          {expandido ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+                    </div>
+
                     {expandido && (
-                      <tr className="bg-surface-base/60">
-                        <td></td>
-                        <td colSpan={6} className="px-6 pb-4 pt-1">
-                          {contratosCliente.length === 0 ? (
-                            <p className="text-secondary text-sm py-2">Este cliente no tiene contratos.</p>
-                          ) : (
-                            <div className="border border-border-subtle rounded-lg overflow-hidden bg-surface-card">
-                              {contratosCliente.map((c) => (
-                                <Link
-                                  key={c.id}
-                                  to={`/contratos/${c.id}`}
-                                  className="flex items-center justify-between px-4 py-2.5 border-b last:border-b-0 border-border-subtle hover:bg-surface-base transition-colors"
-                                >
-                                  <span className="text-action-blue font-medium text-sm">{nombreServicio(c.tipo_servicio_id)}</span>
-                                  <span className="text-secondary text-xs">${Number(c.monto).toFixed(2)} · {c.periodicidad}</span>
-                                  <StatusBadge status={c.estatus} label={c.estatus} />
-                                </Link>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
+                      <div className="mt-3 border border-border-subtle rounded-lg overflow-hidden bg-surface-base">
+                        {contratosCliente.length === 0 ? (
+                          <p className="text-secondary text-sm p-3">Este cliente no tiene contratos.</p>
+                        ) : (
+                          contratosCliente.map((c) => (
+                            <Link
+                              key={c.id}
+                              to={`/contratos/${c.id}`}
+                              className="flex items-center justify-between gap-2 px-3 py-2.5 border-b last:border-b-0 border-border-subtle"
+                            >
+                              <span className="text-action-blue font-medium text-sm truncate">{nombreServicio(c.tipo_servicio_id)}</span>
+                              <span className="text-secondary text-xs shrink-0">${Number(c.monto).toFixed(2)}</span>
+                            </Link>
+                          ))
+                        )}
+                      </div>
                     )}
-                  </Fragment>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </>
+        )}
         <Pagination
           page={paginaActual}
           totalPages={totalPages}
@@ -299,7 +373,7 @@ export function ClienteFormModal({ cliente, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-surface-container-lowest w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden my-8">
-        <div className="px-8 py-6 border-b border-border-subtle flex justify-between items-center">
+        <div className="px-5 md:px-8 py-5 md:py-6 border-b border-border-subtle flex justify-between items-center">
           <h3 className="font-headline-md text-headline-md text-on-surface">
             {esEdicion ? 'Editar cliente' : 'Nuevo cliente'}
           </h3>
@@ -307,7 +381,7 @@ export function ClienteFormModal({ cliente, onClose, onSaved }) {
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        <form className="p-8 space-y-6 max-h-[70vh] overflow-y-auto" onSubmit={handleSubmit}>
+        <form className="p-5 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto" onSubmit={handleSubmit}>
           {error && <p className="text-status-error text-sm">{error}</p>}
           <div className="space-y-2">
             <label className="font-label-md text-label-md text-secondary block">Nombre</label>
@@ -406,10 +480,10 @@ export function ConfirmDialog({ titulo, mensaje, onCancel, onConfirm, confirmLab
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-surface-container-lowest w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-        <div className="p-8 space-y-4">
+        <div className="p-5 md:p-8 space-y-4">
           <h3 className="font-headline-md text-headline-md text-on-surface">{titulo}</h3>
           <p className="text-secondary text-body-md">{mensaje}</p>
-          <div className="flex gap-4 pt-4">
+          <div className="flex gap-3 md:gap-4 pt-4">
             <button className="flex-1 px-4 py-3 border border-border-subtle text-secondary rounded-lg font-semibold hover:bg-surface-base" onClick={onCancel}>
               Cancelar
             </button>

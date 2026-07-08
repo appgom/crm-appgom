@@ -1,12 +1,12 @@
 const VARIANTS = {
-  al_corriente: 'bg-emerald-100 text-status-success',
-  activo: 'bg-emerald-100 text-status-success',
-  vencido: 'bg-red-100 text-status-error',
-  con_adeudo: 'bg-red-100 text-status-error',
-  cancelado: 'bg-red-100 text-status-error',
-  pendiente: 'bg-amber-100 text-status-warning',
-  parcial: 'bg-amber-100 text-status-warning',
-  pagado: 'bg-emerald-100 text-status-success',
+  al_corriente: 'bg-status-success/15 text-status-success',
+  activo: 'bg-status-success/15 text-status-success',
+  vencido: 'bg-status-error/15 text-status-error',
+  con_adeudo: 'bg-status-error/15 text-status-error',
+  cancelado: 'bg-status-error/15 text-status-error',
+  pendiente: 'bg-status-warning/15 text-status-warning',
+  parcial: 'bg-status-warning/15 text-status-warning',
+  pagado: 'bg-status-success/15 text-status-success',
 };
 
 export default function StatusBadge({ status, label }) {

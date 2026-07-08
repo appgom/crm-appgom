@@ -81,24 +81,24 @@ export default function ContratoDetailPage() {
             Cliente: <span className="font-semibold text-text-main">{cliente?.nombre}</span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           <button
             onClick={() => navigate(`/contratos/${id}/editar`)}
-            className="px-4 py-2 border border-border-subtle text-secondary rounded-lg font-semibold hover:bg-surface-base transition-all flex items-center gap-2"
+            className="px-3 md:px-4 py-2 border border-border-subtle text-secondary rounded-lg font-semibold hover:bg-surface-base transition-all flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>
-            Editar
+            <span className="hidden sm:inline">Editar</span>
           </button>
           <button
             onClick={() => setEliminando(true)}
-            className="px-4 py-2 border border-border-subtle text-status-error rounded-lg font-semibold hover:bg-red-50 transition-all flex items-center gap-2"
+            className="px-3 md:px-4 py-2 border border-border-subtle text-status-error rounded-lg font-semibold hover:bg-status-error/10 transition-all flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">delete</span>
-            Eliminar
+            <span className="hidden sm:inline">Eliminar</span>
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="px-6 py-2 bg-action-blue text-white rounded-lg font-semibold hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
+            className="px-4 md:px-6 py-2 bg-action-blue text-white rounded-lg font-semibold hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
           >
             <span className="material-symbols-outlined text-[18px]">add_card</span>
             Registrar pago
@@ -159,41 +159,75 @@ export default function ContratoDetailPage() {
         <div className="px-6 py-4 border-b border-border-subtle">
           <h3 className="font-title-lg text-title-lg text-on-surface">Historial de pagos</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-surface-base/50">
-              <tr>
-                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto aplicado</th>
-                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Método</th>
-                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Referencia</th>
-                <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Comprobante</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {pagos.length === 0 && (
-                <tr>
-                  <td className="px-6 py-6 text-secondary" colSpan={5}>Sin pagos registrados.</td>
-                </tr>
-              )}
+        {pagos.length === 0 && <p className="px-6 py-6 text-secondary">Sin pagos registrados.</p>}
+
+        {pagos.length > 0 && (
+          <>
+            {/* Tabla — desktop/tablet */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-surface-base/50">
+                  <tr>
+                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Fecha</th>
+                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto aplicado</th>
+                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Método</th>
+                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Referencia</th>
+                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Comprobante</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {pagos.map((p) => (
+                    <tr key={p.pago_id} className="hover:bg-surface-base transition-colors">
+                      <td className="px-6 py-4 text-on-surface">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="font-bold text-on-surface">{formatMoney(p.monto_aplicado)}</span>
+                        {p.otros_servicios?.length > 0 && (
+                          <span className="block text-xs text-action-blue">
+                            + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')} ({formatMoney(p.monto_total)} total)
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 capitalize">{p.metodo}</td>
+                      <td className="px-6 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
+                      <td className="px-6 py-4">
+                        {p.comprobante_nombre_original ? (
+                          <a
+                            href={`${BASE_URL}/pagos/${p.pago_id}/comprobante`}
+                            className="text-action-blue hover:underline flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">attachment</span>
+                            Ver
+                          </a>
+                        ) : (
+                          <span className="text-text-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tarjetas — movil */}
+            <div className="md:hidden divide-y divide-border-subtle">
               {pagos.map((p) => (
-                <tr key={p.pago_id} className="hover:bg-surface-base transition-colors">
-                  <td className="px-6 py-4 text-on-surface">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
-                  <td className="px-6 py-4 text-right">
+                <div key={p.pago_id} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-sm text-text-muted">{new Date(p.fecha).toLocaleDateString('es-MX')}</span>
                     <span className="font-bold text-on-surface">{formatMoney(p.monto_aplicado)}</span>
-                    {p.otros_servicios?.length > 0 && (
-                      <span className="block text-xs text-action-blue">
-                        + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')} ({formatMoney(p.monto_total)} total)
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 capitalize">{p.metodo}</td>
-                  <td className="px-6 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
-                  <td className="px-6 py-4">
+                  </div>
+                  {p.otros_servicios?.length > 0 && (
+                    <p className="text-xs text-action-blue mb-1">
+                      + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')} ({formatMoney(p.monto_total)} total)
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between text-sm mt-2">
+                    <span className="capitalize text-secondary">{p.metodo}</span>
+                    <span className="font-mono-label text-xs text-secondary">{p.referencia || '—'}</span>
                     {p.comprobante_nombre_original ? (
                       <a
                         href={`${BASE_URL}/pagos/${p.pago_id}/comprobante`}
-                        className="text-action-blue hover:underline flex items-center gap-1"
+                        className="text-action-blue flex items-center gap-1"
                       >
                         <span className="material-symbols-outlined text-[16px]">attachment</span>
                         Ver
@@ -201,12 +235,12 @@ export default function ContratoDetailPage() {
                     ) : (
                       <span className="text-text-muted">—</span>
                     )}
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {showModal && (

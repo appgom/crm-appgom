@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -8,13 +9,13 @@ const NAV_ITEMS = [
   { to: '/proveedores', label: 'Proveedores', icon: 'inventory_2', disabled: true },
 ];
 
-function NavItem({ to, label, icon, end, disabled }) {
+function NavItem({ to, label, icon, end, disabled, onNavigate }) {
   if (disabled) {
     return (
       <span className="flex items-center gap-3 px-4 py-3 text-secondary/50 cursor-not-allowed">
         <span className="material-symbols-outlined">{icon}</span>
         <span className="font-label-md text-label-md">{label}</span>
-        <span className="ml-auto text-[10px] bg-surface-container px-1.5 py-0.5 rounded-full">Pronto</span>
+        <span className="ml-auto text-[10px] bg-surface-container-high text-secondary px-1.5 py-0.5 rounded-full">Pronto</span>
       </span>
     );
   }
@@ -23,11 +24,12 @@ function NavItem({ to, label, icon, end, disabled }) {
     <NavLink
       to={to}
       end={end}
+      onClick={onNavigate}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3 transition-colors ${
           isActive
             ? 'text-action-blue border-l-2 border-action-blue bg-surface-container-low font-bold'
-            : 'text-secondary hover:bg-surface-base'
+            : 'text-secondary hover:bg-surface-container-low hover:text-on-surface'
         }`
       }
     >
@@ -37,32 +39,54 @@ function NavItem({ to, label, icon, end, disabled }) {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
+  const { usuario } = useAuth();
+  const iniciales = usuario?.nombre
+    ? usuario.nombre.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+    : 'AA';
+
   return (
-    <aside className="w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex flex-col py-6 z-50">
-      <div className="px-6 mb-8">
-        <h1 className="font-display-sm text-display-sm font-bold text-primary">Appcom CRM</h1>
-        <p className="font-label-md text-label-md text-secondary mt-1">Admin Panel</p>
-      </div>
-      <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map((item) => (
-          <NavItem key={item.label} {...item} />
-        ))}
-        <div className="pt-4 mt-4 border-t border-border-subtle">
-          <NavItem to="/configuracion" label="Configuración" icon="settings" />
-        </div>
-      </nav>
-      <div className="px-4 mt-auto">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-base">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">
-            AA
+    <>
+      {open && (
+        <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={onClose} aria-hidden="true"></div>
+      )}
+      <aside
+        className={`w-[260px] md:w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex flex-col py-6 z-50 transform transition-transform duration-200 ease-out ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0`}
+      >
+        <div className="px-6 mb-8 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-orange to-brand-purple flex items-center justify-center text-white font-bold text-sm shrink-0">
+            AG
           </div>
-          <div className="overflow-hidden">
-            <p className="text-sm font-semibold truncate">Appcom Admin</p>
-            <p className="text-xs text-secondary truncate">admin@appcom.com</p>
+          <div className="overflow-hidden flex-1">
+            <h1 className="font-display-sm text-[18px] leading-tight font-bold text-on-surface truncate">Appgom CRM</h1>
+            <p className="font-label-md text-label-md text-secondary truncate">Panel de administración</p>
+          </div>
+          <button className="md:hidden text-secondary p-1" onClick={onClose}>
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+          {NAV_ITEMS.map((item) => (
+            <NavItem key={item.label} {...item} onNavigate={onClose} />
+          ))}
+          <div className="pt-4 mt-4 border-t border-border-subtle">
+            <NavItem to="/configuracion" label="Configuración" icon="settings" onNavigate={onClose} />
+          </div>
+        </nav>
+        <div className="px-4 mt-auto pt-4">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low">
+            <div className="w-8 h-8 rounded-full bg-action-blue flex items-center justify-center text-white font-bold text-xs shrink-0">
+              {iniciales}
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-sm font-semibold text-on-surface truncate">{usuario?.nombre || 'Administrador'}</p>
+              <p className="text-xs text-secondary truncate">{usuario?.email || ''}</p>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -2,9 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   margin: 0;
+  background-color: #0B1526;
+  color: #F3F5FA;
 }
 
 .material-symbols-outlined {
@@ -20,9 +26,9 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: #263A63;
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+  background: #3A4C77;
 }

@@ -92,12 +92,12 @@ export default function ClienteDetailPage() {
         <span className="text-on-surface font-semibold">{cliente.nombre}</span>
       </div>
 
-      <div className="bg-surface-container-lowest border border-border-subtle rounded-xl p-8">
-        <div className="flex items-start justify-between">
+      <div className="bg-surface-container-lowest border border-border-subtle rounded-xl p-5 md:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <h3 className="font-display-sm text-display-sm text-text-main">{cliente.nombre}</h3>
           <button
             onClick={() => setShowEditModal(true)}
-            className="px-4 py-2 border border-border-subtle text-secondary rounded-lg font-semibold hover:bg-surface-base transition-all flex items-center gap-2"
+            className="self-start px-4 py-2 border border-border-subtle text-secondary rounded-lg font-semibold hover:bg-surface-base transition-all flex items-center gap-2 shrink-0"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Editar
@@ -121,7 +121,7 @@ export default function ClienteDetailPage() {
         </div>
       </div>
 
-      <section className="bg-surface-container-lowest border border-border-subtle rounded-xl p-8 mt-6">
+      <section className="bg-surface-container-lowest border border-border-subtle rounded-xl p-5 md:p-8 mt-6">
         <h3 className="font-title-lg text-title-lg text-text-main mb-6">Datos de facturación</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
           <div>
@@ -170,111 +170,170 @@ export default function ClienteDetailPage() {
       </section>
 
       <section className="bg-surface-container-lowest border border-border-subtle rounded-xl overflow-hidden mt-6">
-        <div className="px-8 py-6 border-b border-border-subtle flex items-center justify-between">
+        <div className="px-5 md:px-8 py-5 md:py-6 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="font-headline-md text-headline-md text-text-main">Contratos asociados</h3>
           <Link
             to={`/contratos/nuevo?cliente_id=${cliente.id}`}
-            className="flex items-center gap-2 text-action-blue font-label-md text-label-md px-4 py-2 border border-action-blue rounded-lg hover:bg-surface-base transition-colors"
+            className="self-start sm:self-auto flex items-center gap-2 text-action-blue font-label-md text-label-md px-4 py-2 border border-action-blue rounded-lg hover:bg-surface-base transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             Nuevo contrato
           </Link>
         </div>
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-base">
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Servicio</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Monto</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Periodicidad</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Próximo vencimiento</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Estatus</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {contratos.length === 0 && (
-                <tr>
-                  <td className="px-8 py-6 text-secondary" colSpan={5}>Este cliente no tiene contratos.</td>
-                </tr>
-              )}
+
+        {contratos.length === 0 && (
+          <p className="px-5 md:px-8 py-6 text-secondary">Este cliente no tiene contratos.</p>
+        )}
+
+        {contratos.length > 0 && (
+          <>
+            {/* Tabla — desktop/tablet */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-base">
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Servicio</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Monto</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Periodicidad</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Próximo vencimiento</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Estatus</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {contratos.map((c) => (
+                    <tr key={c.id} className="hover:bg-surface-base transition-colors">
+                      <td className="px-8 py-5">
+                        <Link to={`/contratos/${c.id}`} className="font-title-lg text-title-lg text-action-blue hover:underline">
+                          {nombreServicio(c.tipo_servicio_id)}
+                        </Link>
+                      </td>
+                      <td className="px-8 py-5 font-title-lg text-title-lg text-text-main">${Number(c.monto).toFixed(2)}</td>
+                      <td className="px-8 py-5">
+                        <span className="px-3 py-1 bg-surface-container-high rounded text-body-sm font-medium text-primary capitalize">
+                          {c.periodicidad}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-body-md text-text-main">
+                        {new Date(c.fecha_proximo_vencimiento).toLocaleDateString('es-MX')}
+                      </td>
+                      <td className="px-8 py-5">
+                        <StatusBadge status={c.estatus} label={c.estatus} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tarjetas — movil */}
+            <div className="md:hidden divide-y divide-border-subtle">
               {contratos.map((c) => (
-                <tr key={c.id} className="hover:bg-surface-base transition-colors">
-                  <td className="px-8 py-5">
-                    <Link to={`/contratos/${c.id}`} className="font-title-lg text-title-lg text-action-blue hover:underline">
-                      {nombreServicio(c.tipo_servicio_id)}
-                    </Link>
-                  </td>
-                  <td className="px-8 py-5 font-title-lg text-title-lg text-text-main">${Number(c.monto).toFixed(2)}</td>
-                  <td className="px-8 py-5">
-                    <span className="px-3 py-1 bg-surface-container-high rounded text-body-sm font-medium text-primary capitalize">
-                      {c.periodicidad}
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 text-body-md text-text-main">
-                    {new Date(c.fecha_proximo_vencimiento).toLocaleDateString('es-MX')}
-                  </td>
-                  <td className="px-8 py-5">
+                <Link key={c.id} to={`/contratos/${c.id}`} className="block p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="font-semibold text-action-blue">{nombreServicio(c.tipo_servicio_id)}</span>
                     <StatusBadge status={c.estatus} label={c.estatus} />
-                  </td>
-                </tr>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-main font-semibold">${Number(c.monto).toFixed(2)}</span>
+                    <span className="text-secondary capitalize">{c.periodicidad}</span>
+                    <span className="text-text-muted">{new Date(c.fecha_proximo_vencimiento).toLocaleDateString('es-MX')}</span>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="bg-surface-container-lowest border border-border-subtle rounded-xl overflow-hidden mt-6">
-        <div className="px-8 py-6 border-b border-border-subtle">
+        <div className="px-5 md:px-8 py-5 md:py-6 border-b border-border-subtle">
           <h3 className="font-headline-md text-headline-md text-text-main">Historial de pagos</h3>
           <p className="text-secondary text-body-sm">Todos los pagos registrados de este cliente, en todos sus contratos.</p>
         </div>
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-base">
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Fecha</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Servicio</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider text-right">Monto</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Método</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Referencia</th>
-                <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Comprobante</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {pagos.length === 0 && (
-                <tr>
-                  <td className="px-8 py-6 text-secondary" colSpan={6}>Sin pagos registrados.</td>
-                </tr>
-              )}
+
+        {pagos.length === 0 && <p className="px-5 md:px-8 py-6 text-secondary">Sin pagos registrados.</p>}
+
+        {pagos.length > 0 && (
+          <>
+            {/* Tabla — desktop/tablet */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-base">
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Fecha</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Servicio</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider text-right">Monto</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Método</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Referencia</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Comprobante</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {pagos.map((p) => (
+                    <tr key={`${p.pago_id}-${p.contrato_id}`} className="hover:bg-surface-base transition-colors">
+                      <td className="px-8 py-4 text-text-main">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
+                      <td className="px-8 py-4 text-text-main">
+                        {p.tipo_servicio}
+                        {p.otros_servicios?.length > 0 && (
+                          <span className="block text-xs text-action-blue">
+                            + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-8 py-4 text-right font-bold text-text-main">{formatMoney(p.monto_aplicado)}</td>
+                      <td className="px-8 py-4 capitalize">{p.metodo}</td>
+                      <td className="px-8 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
+                      <td className="px-8 py-4">
+                        {p.comprobante_nombre_original ? (
+                          <a href={`${BASE_URL}/pagos/${p.pago_id}/comprobante`} className="text-action-blue hover:underline flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[16px]">attachment</span>
+                            Ver
+                          </a>
+                        ) : (
+                          <span className="text-text-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tarjetas — movil */}
+            <div className="md:hidden divide-y divide-border-subtle">
               {pagos.map((p) => (
-                <tr key={`${p.pago_id}-${p.contrato_id}`} className="hover:bg-surface-base transition-colors">
-                  <td className="px-8 py-4 text-text-main">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
-                  <td className="px-8 py-4 text-text-main">
-                    {p.tipo_servicio}
-                    {p.otros_servicios?.length > 0 && (
-                      <span className="block text-xs text-action-blue">
-                        + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-8 py-4 text-right font-bold text-text-main">{formatMoney(p.monto_aplicado)}</td>
-                  <td className="px-8 py-4 capitalize">{p.metodo}</td>
-                  <td className="px-8 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
-                  <td className="px-8 py-4">
+                <div key={`${p.pago_id}-${p.contrato_id}`} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="min-w-0">
+                      <p className="text-text-main font-medium truncate">
+                        {p.tipo_servicio}
+                        {p.otros_servicios?.length > 0 && (
+                          <span className="block text-xs text-action-blue font-normal">
+                            + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-text-muted">{new Date(p.fecha).toLocaleDateString('es-MX')}</p>
+                    </div>
+                    <span className="font-bold text-text-main shrink-0">{formatMoney(p.monto_aplicado)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-2">
+                    <span className="capitalize text-secondary">{p.metodo}</span>
+                    <span className="font-mono-label text-xs text-secondary">{p.referencia || '—'}</span>
                     {p.comprobante_nombre_original ? (
-                      <a href={`${BASE_URL}/pagos/${p.pago_id}/comprobante`} className="text-action-blue hover:underline flex items-center gap-1">
+                      <a href={`${BASE_URL}/pagos/${p.pago_id}/comprobante`} className="text-action-blue flex items-center gap-1">
                         <span className="material-symbols-outlined text-[16px]">attachment</span>
                         Ver
                       </a>
                     ) : (
                       <span className="text-text-muted">—</span>
                     )}
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </>
+        )}
       </section>
 
       {showEditModal && (

@@ -142,128 +142,223 @@ export default function ContratosPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse min-w-[950px]">
-            <thead className="bg-surface-container-low text-secondary border-b border-border-subtle">
-              <tr>
-                <th className="w-10"></th>
-                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Cliente</th>
-                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Servicio</th>
-                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Monto</th>
-                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Periodicidad</th>
-                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Próximo vencimiento</th>
-                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Estatus</th>
-                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {loading && (
-                <tr>
-                  <td className="px-4 py-6 text-secondary" colSpan={8}>Cargando...</td>
-                </tr>
-              )}
-              {!loading && contratosPagina.length === 0 && (
-                <tr>
-                  <td className="px-4 py-6 text-secondary" colSpan={8}>Sin contratos que coincidan con el filtro.</td>
-                </tr>
-              )}
+        {loading && <p className="px-4 py-6 text-secondary">Cargando...</p>}
+        {!loading && contratosPagina.length === 0 && (
+          <p className="px-4 py-6 text-secondary">Sin contratos que coincidan con el filtro.</p>
+        )}
+
+        {!loading && contratosPagina.length > 0 && (
+          <>
+            {/* Tabla — desktop/tablet */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[950px]">
+                <thead className="bg-surface-container-low text-secondary border-b border-border-subtle">
+                  <tr>
+                    <th className="w-10"></th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Cliente</th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Servicio</th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Monto</th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Periodicidad</th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Próximo vencimiento</th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Estatus</th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {contratosPagina.map((c) => {
+                    const expandido = expandidoId === c.id;
+                    const saldo = saldos[c.id];
+                    return (
+                      <Fragment key={c.id}>
+                        <tr className="hover:bg-surface-base transition-colors">
+                          <td className="pl-4">
+                            <button className="p-1 text-secondary hover:text-action-blue" onClick={() => toggleExpandir(c)}>
+                              <span className="material-symbols-outlined text-[20px]">
+                                {expandido ? 'expand_more' : 'chevron_right'}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Link to={`/clientes/${c.cliente_id}`} className="font-semibold text-on-surface hover:text-action-blue">
+                              {nombreCliente(c.cliente_id)}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Link to={`/contratos/${c.id}`} className="text-action-blue hover:underline text-[13px] font-medium">
+                              {nombreServicio(c.tipo_servicio_id)}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono-label font-bold">${Number(c.monto).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-secondary font-body-sm capitalize">{c.periodicidad}</td>
+                          <td className="px-4 py-3 text-on-surface font-body-sm">
+                            {new Date(c.fecha_proximo_vencimiento).toLocaleDateString('es-MX')}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={c.estatus} label={c.estatus} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                title="Editar"
+                                className="p-1.5 text-secondary hover:text-action-blue hover:bg-surface-container-low rounded"
+                                onClick={() => navigate(`/contratos/${c.id}/editar`)}
+                              >
+                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                              </button>
+                              <button
+                                title="Eliminar"
+                                className="p-1.5 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
+                                onClick={() => setEliminando(c)}
+                              >
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandido && (
+                          <tr className="bg-surface-base/60">
+                            <td></td>
+                            <td colSpan={7} className="px-4 pb-4 pt-1">
+                              <div className="border border-border-subtle rounded-lg bg-surface-card p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                  <p className="font-label-md text-label-md text-text-muted">Número de contrato</p>
+                                  <p className="text-sm text-text-main">{c.numero_contrato || '—'}</p>
+                                </div>
+                                <div>
+                                  <p className="font-label-md text-label-md text-text-muted">Modalidad</p>
+                                  <p className="text-sm text-text-main capitalize">{c.modalidad_facturacion}</p>
+                                </div>
+                                <div>
+                                  <p className="font-label-md text-label-md text-text-muted">Fecha de inicio</p>
+                                  <p className="text-sm text-text-main">{new Date(c.fecha_inicio).toLocaleDateString('es-MX')}</p>
+                                </div>
+                                <div>
+                                  <p className="font-label-md text-label-md text-text-muted">Saldo pendiente</p>
+                                  {!saldo && <p className="text-sm text-text-muted">Cargando...</p>}
+                                  {saldo?.error && <p className="text-sm text-status-error">{saldo.error}</p>}
+                                  {saldo && !saldo.error && (
+                                    <p className={`text-sm font-bold ${saldo.al_corriente ? 'text-status-success' : 'text-status-warning'}`}>
+                                      {saldo.al_corriente ? 'Al corriente' : formatMoney(saldo.saldo_pendiente)}
+                                      {saldo.dias_atraso > 0 && ` (${saldo.dias_atraso}d de atraso)`}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="col-span-2 md:col-span-4">
+                                  <p className="font-label-md text-label-md text-text-muted">Descripción</p>
+                                  <p className="text-sm text-text-main">{c.descripcion || '—'}</p>
+                                </div>
+                                <div className="col-span-2 md:col-span-4">
+                                  <Link to={`/contratos/${c.id}`} className="text-action-blue text-sm font-medium hover:underline">
+                                    Ver detalle completo →
+                                  </Link>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tarjetas — movil */}
+            <div className="md:hidden divide-y divide-border-subtle">
               {contratosPagina.map((c) => {
                 const expandido = expandidoId === c.id;
                 const saldo = saldos[c.id];
                 return (
-                  <Fragment key={c.id}>
-                    <tr className="hover:bg-surface-base transition-colors">
-                      <td className="pl-4">
-                        <button className="p-1 text-secondary hover:text-action-blue" onClick={() => toggleExpandir(c)}>
-                          <span className="material-symbols-outlined text-[20px]">
-                            {expandido ? 'expand_more' : 'chevron_right'}
-                          </span>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link to={`/clientes/${c.cliente_id}`} className="font-semibold text-on-surface hover:text-action-blue">
-                          {nombreCliente(c.cliente_id)}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link to={`/contratos/${c.id}`} className="text-action-blue hover:underline text-[13px] font-medium">
+                  <div key={c.id} className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <Link to={`/contratos/${c.id}`} className="text-action-blue font-semibold truncate block">
                           {nombreServicio(c.tipo_servicio_id)}
                         </Link>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono-label font-bold">${Number(c.monto).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-secondary font-body-sm capitalize">{c.periodicidad}</td>
-                      <td className="px-4 py-3 text-on-surface font-body-sm">
-                        {new Date(c.fecha_proximo_vencimiento).toLocaleDateString('es-MX')}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={c.estatus} label={c.estatus} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            title="Editar"
-                            className="p-1.5 text-secondary hover:text-action-blue hover:bg-surface-container-low rounded"
-                            onClick={() => navigate(`/contratos/${c.id}/editar`)}
-                          >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
-                          <button
-                            title="Eliminar"
-                            className="p-1.5 text-secondary hover:text-status-error hover:bg-red-50 rounded"
-                            onClick={() => setEliminando(c)}
-                          >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                        <Link to={`/clientes/${c.cliente_id}`} className="text-sm text-secondary truncate block">
+                          {nombreCliente(c.cliente_id)}
+                        </Link>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          title="Editar"
+                          className="p-2 text-secondary hover:text-action-blue hover:bg-surface-container-low rounded"
+                          onClick={() => navigate(`/contratos/${c.id}/editar`)}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
+                        <button
+                          title="Eliminar"
+                          className="p-2 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
+                          onClick={() => setEliminando(c)}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 text-sm">
+                      <span className="font-mono-label font-bold text-text-main">${Number(c.monto).toFixed(2)}</span>
+                      <span className="text-secondary capitalize">{c.periodicidad}</span>
+                      <StatusBadge status={c.estatus} label={c.estatus} />
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-text-muted">
+                        Vence: {new Date(c.fecha_proximo_vencimiento).toLocaleDateString('es-MX')}
+                      </span>
+                      <button
+                        className="flex items-center gap-1 text-sm text-secondary"
+                        onClick={() => toggleExpandir(c)}
+                      >
+                        Detalle
+                        <span className="material-symbols-outlined text-[18px]">
+                          {expandido ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+                    </div>
+
                     {expandido && (
-                      <tr className="bg-surface-base/60">
-                        <td></td>
-                        <td colSpan={7} className="px-4 pb-4 pt-1">
-                          <div className="border border-border-subtle rounded-lg bg-surface-card p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                              <p className="font-label-md text-label-md text-text-muted">Número de contrato</p>
-                              <p className="text-sm text-text-main">{c.numero_contrato || '—'}</p>
-                            </div>
-                            <div>
-                              <p className="font-label-md text-label-md text-text-muted">Modalidad</p>
-                              <p className="text-sm text-text-main capitalize">{c.modalidad_facturacion}</p>
-                            </div>
-                            <div>
-                              <p className="font-label-md text-label-md text-text-muted">Fecha de inicio</p>
-                              <p className="text-sm text-text-main">{new Date(c.fecha_inicio).toLocaleDateString('es-MX')}</p>
-                            </div>
-                            <div>
-                              <p className="font-label-md text-label-md text-text-muted">Saldo pendiente</p>
-                              {!saldo && <p className="text-sm text-text-muted">Cargando...</p>}
-                              {saldo?.error && <p className="text-sm text-status-error">{saldo.error}</p>}
-                              {saldo && !saldo.error && (
-                                <p className={`text-sm font-bold ${saldo.al_corriente ? 'text-status-success' : 'text-status-warning'}`}>
-                                  {saldo.al_corriente ? 'Al corriente' : formatMoney(saldo.saldo_pendiente)}
-                                  {saldo.dias_atraso > 0 && ` (${saldo.dias_atraso}d de atraso)`}
-                                </p>
-                              )}
-                            </div>
-                            <div className="col-span-2 md:col-span-4">
-                              <p className="font-label-md text-label-md text-text-muted">Descripción</p>
-                              <p className="text-sm text-text-main">{c.descripcion || '—'}</p>
-                            </div>
-                            <div className="col-span-2 md:col-span-4">
-                              <Link to={`/contratos/${c.id}`} className="text-action-blue text-sm font-medium hover:underline">
-                                Ver detalle completo →
-                              </Link>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
+                      <div className="mt-3 border border-border-subtle rounded-lg bg-surface-base p-3 grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="font-label-md text-label-md text-text-muted">Número de contrato</p>
+                          <p className="text-sm text-text-main">{c.numero_contrato || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="font-label-md text-label-md text-text-muted">Modalidad</p>
+                          <p className="text-sm text-text-main capitalize">{c.modalidad_facturacion}</p>
+                        </div>
+                        <div>
+                          <p className="font-label-md text-label-md text-text-muted">Fecha de inicio</p>
+                          <p className="text-sm text-text-main">{new Date(c.fecha_inicio).toLocaleDateString('es-MX')}</p>
+                        </div>
+                        <div>
+                          <p className="font-label-md text-label-md text-text-muted">Saldo pendiente</p>
+                          {!saldo && <p className="text-sm text-text-muted">Cargando...</p>}
+                          {saldo?.error && <p className="text-sm text-status-error">{saldo.error}</p>}
+                          {saldo && !saldo.error && (
+                            <p className={`text-sm font-bold ${saldo.al_corriente ? 'text-status-success' : 'text-status-warning'}`}>
+                              {saldo.al_corriente ? 'Al corriente' : formatMoney(saldo.saldo_pendiente)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="col-span-2">
+                          <p className="font-label-md text-label-md text-text-muted">Descripción</p>
+                          <p className="text-sm text-text-main">{c.descripcion || '—'}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <Link to={`/contratos/${c.id}`} className="text-action-blue text-sm font-medium hover:underline">
+                            Ver detalle completo →
+                          </Link>
+                        </div>
+                      </div>
                     )}
-                  </Fragment>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </>
+        )}
 
         <Pagination
           page={paginaActual}

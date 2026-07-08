@@ -46,74 +46,129 @@ export default function VencimientosPage() {
       {error && <p className="text-status-error">{error}</p>}
 
       <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse min-w-[950px]">
-            <thead>
-              <tr className="bg-surface-base border-b border-border-subtle">
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cliente</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Servicio</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Pagado</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Saldo</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Vencimiento</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center">Días de atraso</th>
-                <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {loading && (
-                <tr>
-                  <td className="px-6 py-6 text-secondary" colSpan={8}>Cargando...</td>
-                </tr>
-              )}
-              {!loading && vencimientos.length === 0 && (
-                <tr>
-                  <td className="px-6 py-6 text-secondary" colSpan={8}>No hay cargos pendientes. Todos al corriente.</td>
-                </tr>
-              )}
+        {loading && <p className="px-6 py-6 text-secondary">Cargando...</p>}
+        {!loading && vencimientos.length === 0 && (
+          <p className="px-6 py-6 text-secondary">No hay cargos pendientes. Todos al corriente.</p>
+        )}
+
+        {!loading && vencimientos.length > 0 && (
+          <>
+            {/* Tabla — desktop/tablet */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[950px]">
+                <thead>
+                  <tr className="bg-surface-base border-b border-border-subtle">
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cliente</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Servicio</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Pagado</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Saldo</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Vencimiento</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center">Días de atraso</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {vencimientos.map((v) => (
+                    <tr key={v.cargo_id} className="hover:bg-surface-base transition-colors">
+                      <td className="px-6 py-4">
+                        <Link to={`/clientes/${v.cliente_id}`} className="font-semibold text-on-surface hover:text-action-blue block">
+                          {v.cliente_nombre}
+                        </Link>
+                        <span className="text-xs text-text-muted">{v.cliente_email}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Link to={`/contratos/${v.contrato_id}`} className="text-action-blue hover:underline">
+                          {v.tipo_servicio}
+                        </Link>
+                        {v.numero_contrato && <span className="block text-xs text-text-muted">{v.numero_contrato}</span>}
+                      </td>
+                      <td className="px-6 py-4 text-right">{formatMoney(v.monto)}</td>
+                      <td className="px-6 py-4 text-right text-status-success">{formatMoney(v.total_pagado)}</td>
+                      <td className="px-6 py-4 text-right font-semibold">{formatMoney(v.saldo_pendiente)}</td>
+                      <td className="px-6 py-4">{new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}</td>
+                      <td className="px-6 py-4 text-center">
+                        {v.vencido ? (
+                          <span className="px-3 py-1 bg-error-container text-status-error rounded-full text-xs font-bold">
+                            {v.dias_atraso} días
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-surface-container text-secondary rounded-full text-xs font-medium">
+                            Por vencer
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => setPagando(v)}
+                          className="px-3 py-1.5 bg-action-blue text-white rounded-lg text-xs font-semibold hover:bg-primary transition-all flex items-center gap-1 ml-auto"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">add_card</span>
+                          Registrar pago
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tarjetas — movil */}
+            <div className="md:hidden divide-y divide-border-subtle">
               {vencimientos.map((v) => (
-                <tr key={v.cargo_id} className="hover:bg-surface-base transition-colors">
-                  <td className="px-6 py-4">
-                    <Link to={`/clientes/${v.cliente_id}`} className="font-semibold text-on-surface hover:text-action-blue block">
-                      {v.cliente_nombre}
-                    </Link>
-                    <span className="text-xs text-text-muted">{v.cliente_email}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link to={`/contratos/${v.contrato_id}`} className="text-action-blue hover:underline">
-                      {v.tipo_servicio}
-                    </Link>
-                    {v.numero_contrato && <span className="block text-xs text-text-muted">{v.numero_contrato}</span>}
-                  </td>
-                  <td className="px-6 py-4 text-right">{formatMoney(v.monto)}</td>
-                  <td className="px-6 py-4 text-right text-status-success">{formatMoney(v.total_pagado)}</td>
-                  <td className="px-6 py-4 text-right font-semibold">{formatMoney(v.saldo_pendiente)}</td>
-                  <td className="px-6 py-4">{new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}</td>
-                  <td className="px-6 py-4 text-center">
+                <div key={v.cargo_id} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="min-w-0">
+                      <Link to={`/clientes/${v.cliente_id}`} className="font-semibold text-on-surface truncate block">
+                        {v.cliente_nombre}
+                      </Link>
+                      <Link to={`/contratos/${v.contrato_id}`} className="text-action-blue text-sm truncate block">
+                        {v.tipo_servicio}
+                      </Link>
+                    </div>
                     {v.vencido ? (
-                      <span className="px-3 py-1 bg-error-container text-status-error rounded-full text-xs font-bold">
-                        {v.dias_atraso} días
+                      <span className="shrink-0 px-2 py-0.5 bg-error-container text-status-error rounded-full text-xs font-bold">
+                        {v.dias_atraso}d atraso
                       </span>
                     ) : (
-                      <span className="px-3 py-1 bg-surface-container text-secondary rounded-full text-xs font-medium">
+                      <span className="shrink-0 px-2 py-0.5 bg-surface-container text-secondary rounded-full text-xs font-medium">
                         Por vencer
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 my-3 text-sm">
+                    <div>
+                      <p className="text-xs text-text-muted">Monto</p>
+                      <p className="text-text-main">{formatMoney(v.monto)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Pagado</p>
+                      <p className="text-status-success">{formatMoney(v.total_pagado)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Saldo</p>
+                      <p className="font-semibold text-text-main">{formatMoney(v.saldo_pendiente)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-text-muted">
+                      Vence: {new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}
+                    </span>
                     <button
                       onClick={() => setPagando(v)}
-                      className="px-3 py-1.5 bg-action-blue text-white rounded-lg text-xs font-semibold hover:bg-primary transition-all flex items-center gap-1 ml-auto"
+                      className="px-3 py-1.5 bg-action-blue text-white rounded-lg text-xs font-semibold hover:bg-primary transition-all flex items-center gap-1"
                     >
                       <span className="material-symbols-outlined text-[16px]">add_card</span>
                       Registrar pago
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {pagando && (

@@ -69,7 +69,7 @@ export default function ConfiguracionPage() {
               <button
                 onClick={() => toggleActivo(s)}
                 className={`text-xs font-bold px-3 py-1 rounded-full ${
-                  s.activo ? 'bg-emerald-100 text-status-success' : 'bg-surface-container text-secondary'
+                  s.activo ? 'bg-status-success/15 text-status-success' : 'bg-surface-container text-secondary'
                 }`}
               >
                 {s.activo ? 'Activo' : 'Inactivo'}

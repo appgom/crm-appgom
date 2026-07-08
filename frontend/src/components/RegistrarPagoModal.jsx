@@ -84,7 +84,7 @@ export default function RegistrarPagoModal({
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-surface-container-lowest w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden my-8">
-        <div className="px-8 py-6 border-b border-border-subtle flex justify-between items-center">
+        <div className="px-5 md:px-8 py-5 md:py-6 border-b border-border-subtle flex justify-between items-center">
           <div>
             <h3 className="font-headline-md text-headline-md text-on-surface">Registrar pago</h3>
             {clienteNombre && <p className="text-secondary font-label-md text-label-md">{clienteNombre}</p>}
@@ -93,10 +93,10 @@ export default function RegistrarPagoModal({
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        <form className="p-8 space-y-6 max-h-[75vh] overflow-y-auto" onSubmit={handleSubmit}>
+        <form className="p-5 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto" onSubmit={handleSubmit}>
           {error && <p className="text-status-error text-sm">{error}</p>}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="font-label-md text-label-md text-secondary block">Fecha</label>
               <input
@@ -146,8 +146,8 @@ export default function RegistrarPagoModal({
             <p className="font-label-md text-label-md text-secondary uppercase tracking-wider">Aplicar a</p>
             {aplicaciones.map((a, i) => (
               <div key={a.cargo_id ?? i} className="flex items-center gap-2">
-                <span className="flex-1 text-sm text-text-main">{a.tipo_servicio}</span>
-                <div className="relative w-32">
+                <span className="flex-1 min-w-0 truncate text-sm text-text-main">{a.tipo_servicio}</span>
+                <div className="relative w-24 sm:w-32 shrink-0">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">$</span>
                   <input
                     type="number"
@@ -159,7 +159,7 @@ export default function RegistrarPagoModal({
                   />
                 </div>
                 {aplicaciones.length > 1 && (
-                  <button type="button" className="p-1 text-secondary hover:text-status-error" onClick={() => quitarAplicacion(i)}>
+                  <button type="button" className="p-1 text-secondary hover:text-status-error shrink-0" onClick={() => quitarAplicacion(i)}>
                     <span className="material-symbols-outlined text-[18px]">close</span>
                   </button>
                 )}
@@ -167,9 +167,9 @@ export default function RegistrarPagoModal({
             ))}
 
             {opcionesDisponibles.length > 0 && (
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
                 <select
-                  className="flex-1 bg-surface-base border border-border-subtle rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-action-blue"
+                  className="flex-1 min-w-0 bg-surface-base border border-border-subtle rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-action-blue"
                   value={cargoParaAgregar}
                   onChange={(e) => setCargoParaAgregar(e.target.value)}
                 >
@@ -184,7 +184,7 @@ export default function RegistrarPagoModal({
                   type="button"
                   disabled={!cargoParaAgregar}
                   onClick={agregarAplicacion}
-                  className="px-3 py-2 border border-border-subtle rounded-lg text-sm font-semibold text-action-blue hover:bg-surface-base disabled:opacity-40"
+                  className="px-3 py-2 border border-border-subtle rounded-lg text-sm font-semibold text-action-blue hover:bg-surface-base disabled:opacity-40 shrink-0"
                 >
                   Agregar
                 </button>
