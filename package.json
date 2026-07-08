@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
+    "prestart": "node src/config/migrate.js",
     "dev": "node --watch src/server.js",
     "migrate": "node src/config/migrate.js",
     "recordatorios": "node src/jobs/enviarRecordatorios.js"

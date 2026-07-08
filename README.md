@@ -162,4 +162,41 @@ diario una vez desplegado en SiteGround (cron nativo de Linux).
 
 ## Despliegue a SiteGround
 
-No implementado todavía — se documentará cuando el núcleo esté probado localmente.
+Bloqueado por un problema de la cuenta (límite de procesos al conectar por SSH, en
+seguimiento con soporte de SiteGround). Mientras se resuelve, el proyecto está
+preparado para desplegarse en Render como plan B (ver siguiente sección).
+
+## Despliegue a Render (plan B)
+
+El repo incluye [render.yaml](render.yaml) (formato "Blueprint" de Render), que crea de
+un solo click:
+- Un **Web Service** de Node que compila el frontend y sirve tanto la API (`/api/*`)
+  como los archivos estáticos de React desde el mismo proceso (sin CORS, sin necesidad
+  de dos servicios separados).
+- Una base de datos **PostgreSQL** administrada, conectada automáticamente vía
+  `DATABASE_URL`.
+
+### Pasos
+
+1. En el dashboard de Render: **New → Blueprint**, conecta este repositorio de GitHub.
+2. Render detecta `render.yaml` y propone crear el Web Service + la base de datos.
+   Antes de confirmar, completa las variables de entorno marcadas como `sync: false`:
+   `ADMIN_EMAIL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`.
+3. Al desplegar, `npm start` corre automáticamente `npm run migrate` primero (vía el
+   hook `prestart` de npm) — no hay que ejecutar migraciones a mano.
+4. Verifica `https://<tu-servicio>.onrender.com/health`.
+
+### Limitaciones a tener en cuenta
+
+- **Archivos subidos (CSF, comprobantes) no persisten entre deploys.** El plan
+  gratuito/estándar de Render no incluye disco persistente — cada vez que se
+  redespliega el servicio, la carpeta `uploads/` se reinicia vacía. Para producción
+  real hay dos opciones cuando se llegue a ese punto: agregar un
+  [Persistent Disk](https://render.com/docs/disks) de Render (plan pagado), o migrar
+  el almacenamiento de archivos a un servicio externo (S3, Cloudflare R2, etc.).
+- **El cron de recordatorios (`npm run recordatorios`) no corre solo.** Render ofrece
+  "Cron Jobs" como tipo de servicio aparte (con costo, no está en el plan gratuito).
+  Se agrega cuando se decida activar los recordatorios en producción.
+- El plan gratuito de Render "duerme" el servicio tras un rato sin tráfico; la primera
+  petición después de eso tarda unos segundos en responder. No afecta el
+  funcionamiento, solo la latencia inicial.
