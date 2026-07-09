@@ -42,12 +42,43 @@ if (fs.existsSync(frontendDist)) {
   });
 }
 
+const NOMBRES_CAMPO = {
+  email: 'correo',
+  numero_contrato: 'número de contrato',
+  rfc: 'RFC',
+};
+
+function nombreCampo(campo) {
+  return NOMBRES_CAMPO[campo] || campo;
+}
+
 app.use((err, req, res, next) => {
   console.error(err);
+
   if (err instanceof multer.MulterError || /Solo se aceptan archivos/.test(err.message)) {
     return res.status(400).json({ error: err.message });
   }
-  res.status(500).json({ error: 'Error interno del servidor' });
+
+  // Errores de Postgres: dan mas contexto que un 500 generico.
+  if (err.code === '23505') {
+    const campo = err.detail?.match(/Key \(([^)]+)\)=/)?.[1];
+    const mensaje = campo
+      ? `Ya existe un registro con ese ${nombreCampo(campo)}.`
+      : 'Ya existe un registro con esos datos.';
+    return res.status(409).json({ error: mensaje });
+  }
+  if (err.code === '23503') {
+    return res.status(409).json({ error: 'No se puede completar la operación: hay registros relacionados que lo impiden.' });
+  }
+  if (err.code === '23502') {
+    const campo = err.column ? nombreCampo(err.column) : null;
+    return res.status(400).json({ error: campo ? `Falta el campo obligatorio: ${campo}.` : 'Falta un campo obligatorio.' });
+  }
+  if (err.code === '22P02') {
+    return res.status(400).json({ error: 'Uno de los valores enviados tiene un formato inválido.' });
+  }
+
+  res.status(500).json({ error: err.message || 'Error interno del servidor' });
 });
 
 const PORT = process.env.PORT || 3000;

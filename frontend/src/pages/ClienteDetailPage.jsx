@@ -94,7 +94,12 @@ export default function ClienteDetailPage() {
 
       <div className="bg-surface-container-lowest border border-border-subtle rounded-xl p-5 md:p-8">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <h3 className="font-display-sm text-display-sm text-text-main">{cliente.nombre}</h3>
+          <div>
+            {cliente.empresa && (
+              <p className="font-label-md text-label-md text-secondary mb-1">{cliente.empresa}</p>
+            )}
+            <h3 className="font-display-sm text-display-sm text-text-main">{cliente.nombre}</h3>
+          </div>
           <button
             onClick={() => setShowEditModal(true)}
             className="self-start px-4 py-2 border border-border-subtle text-secondary rounded-lg font-semibold hover:bg-surface-base transition-all flex items-center gap-2 shrink-0"

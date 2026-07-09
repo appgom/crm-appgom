@@ -151,10 +151,13 @@ export default function ClientesPage() {
                           </td>
                           <td className="px-6 py-4">
                             <Link to={`/clientes/${cliente.id}`} className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xs">
+                              <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xs shrink-0">
                                 {cliente.nombre.slice(0, 2).toUpperCase()}
                               </div>
-                              <span className="font-bold text-on-surface hover:text-action-blue">{cliente.nombre}</span>
+                              <div>
+                                {cliente.empresa && <span className="block text-xs text-secondary">{cliente.empresa}</span>}
+                                <span className="font-bold text-on-surface hover:text-action-blue">{cliente.nombre}</span>
+                              </div>
                             </Link>
                           </td>
                           <td className="px-6 py-4 text-secondary">{cliente.email}</td>
@@ -233,6 +236,7 @@ export default function ClientesPage() {
                           {cliente.nombre.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">
+                          {cliente.empresa && <p className="text-secondary text-xs truncate">{cliente.empresa}</p>}
                           <p className="font-bold text-on-surface truncate">{cliente.nombre}</p>
                           <p className="text-secondary text-xs truncate">{cliente.email}</p>
                         </div>
@@ -342,6 +346,7 @@ export function ClienteFormModal({ cliente, onClose, onSaved }) {
   const esEdicion = Boolean(cliente);
   const [form, setForm] = useState({
     nombre: cliente?.nombre || '',
+    empresa: cliente?.empresa || '',
     email: cliente?.email || '',
     telefono: cliente?.telefono || '',
     razon_social: cliente?.razon_social || '',
@@ -384,7 +389,15 @@ export function ClienteFormModal({ cliente, onClose, onSaved }) {
         <form className="p-5 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto" onSubmit={handleSubmit}>
           {error && <p className="text-status-error text-sm">{error}</p>}
           <div className="space-y-2">
-            <label className="font-label-md text-label-md text-secondary block">Nombre</label>
+            <label className="font-label-md text-label-md text-secondary block">Empresa/Alias</label>
+            <input
+              className="w-full bg-surface-base border border-border-subtle rounded-lg px-4 py-2.5 text-body-md outline-none focus:ring-2 focus:ring-action-blue"
+              value={form.empresa}
+              onChange={(e) => setForm({ ...form, empresa: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="font-label-md text-label-md text-secondary block">Nombre de contacto</label>
             <input
               required
               className="w-full bg-surface-base border border-border-subtle rounded-lg px-4 py-2.5 text-body-md outline-none focus:ring-2 focus:ring-action-blue"

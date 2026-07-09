@@ -16,11 +16,11 @@ async function getOne(req, res) {
 }
 
 async function create(req, res) {
-  const { nombre, email, telefono } = req.body;
+  const { nombre, email, telefono, empresa } = req.body;
   if (!nombre || !email) {
     return res.status(400).json({ error: 'nombre y email son requeridos' });
   }
-  const cliente = await clienteModel.create({ nombre, email, telefono });
+  const cliente = await clienteModel.create({ nombre, email, telefono, empresa });
   res.status(201).json(cliente);
 }
 
@@ -28,11 +28,12 @@ async function update(req, res) {
   const existente = await clienteModel.findById(req.params.id);
   if (!existente) return res.status(404).json({ error: 'Cliente no encontrado' });
 
-  const { nombre, email, telefono, razon_social, rfc, direccion_fiscal, direccion_envio_facturas } = req.body;
+  const { nombre, email, telefono, empresa, razon_social, rfc, direccion_fiscal, direccion_envio_facturas } = req.body;
   const cliente = await clienteModel.update(req.params.id, {
     nombre: nombre ?? existente.nombre,
     email: email ?? existente.email,
     telefono: telefono ?? existente.telefono,
+    empresa: empresa ?? existente.empresa,
     razon_social: razon_social ?? existente.razon_social,
     rfc: rfc ?? existente.rfc,
     direccion_fiscal: direccion_fiscal ?? existente.direccion_fiscal,

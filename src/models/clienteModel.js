@@ -10,22 +10,22 @@ async function findById(id) {
   return rows[0];
 }
 
-async function create({ nombre, email, telefono }) {
+async function create({ nombre, email, telefono, empresa }) {
   const { rows } = await pool.query(
-    'INSERT INTO clientes (nombre, email, telefono) VALUES ($1, $2, $3) RETURNING *',
-    [nombre, email, telefono]
+    'INSERT INTO clientes (nombre, email, telefono, empresa) VALUES ($1, $2, $3, $4) RETURNING *',
+    [nombre, email, telefono, empresa]
   );
   return rows[0];
 }
 
-async function update(id, { nombre, email, telefono, razon_social, rfc, direccion_fiscal, direccion_envio_facturas }) {
+async function update(id, { nombre, email, telefono, empresa, razon_social, rfc, direccion_fiscal, direccion_envio_facturas }) {
   const { rows } = await pool.query(
     `UPDATE clientes SET
-      nombre = $1, email = $2, telefono = $3,
-      razon_social = $4, rfc = $5, direccion_fiscal = $6, direccion_envio_facturas = $7
-     WHERE id = $8
+      nombre = $1, email = $2, telefono = $3, empresa = $4,
+      razon_social = $5, rfc = $6, direccion_fiscal = $7, direccion_envio_facturas = $8
+     WHERE id = $9
      RETURNING *`,
-    [nombre, email, telefono, razon_social, rfc, direccion_fiscal, direccion_envio_facturas, id]
+    [nombre, email, telefono, empresa, razon_social, rfc, direccion_fiscal, direccion_envio_facturas, id]
   );
   return rows[0];
 }
