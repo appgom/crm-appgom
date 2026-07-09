@@ -139,11 +139,12 @@ export default function NuevoContratoPage() {
               />
             </div>
             <div>
-              <label className="block font-label-md text-label-md text-secondary mb-2">Número de contrato (opcional)</label>
+              <label className="block font-label-md text-label-md text-secondary mb-2">Número de contrato</label>
               <input
-                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
+                disabled
+                placeholder={esEdicion ? '' : 'Se asignará automáticamente al guardar'}
+                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base opacity-60 font-mono-label"
                 value={form.numero_contrato}
-                onChange={(e) => setForm({ ...form, numero_contrato: e.target.value })}
               />
             </div>
             <div>

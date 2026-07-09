@@ -76,6 +76,9 @@ export default function ContratoDetailPage() {
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
+          {contrato.numero_contrato && (
+            <p className="font-mono-label text-xs text-action-blue mb-1">{contrato.numero_contrato}</p>
+          )}
           <h2 className="font-headline-md text-headline-md text-on-surface mb-1">{servicio?.nombre}</h2>
           <p className="text-secondary font-body-md flex items-center gap-2">
             Cliente: <span className="font-semibold text-text-main">{cliente?.nombre}</span>

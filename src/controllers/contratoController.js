@@ -17,7 +17,6 @@ async function create(req, res) {
     cliente_id,
     tipo_servicio_id,
     descripcion,
-    numero_contrato,
     monto,
     periodicidad,
     fecha_inicio,
@@ -36,7 +35,6 @@ async function create(req, res) {
     cliente_id,
     tipo_servicio_id,
     descripcion,
-    numero_contrato,
     monto,
     periodicidad,
     fecha_inicio,
@@ -55,7 +53,6 @@ async function update(req, res) {
   const contrato = await contratoModel.update(req.params.id, {
     tipo_servicio_id: body.tipo_servicio_id ?? existente.tipo_servicio_id,
     descripcion: body.descripcion ?? existente.descripcion,
-    numero_contrato: body.numero_contrato ?? existente.numero_contrato,
     monto: body.monto ?? existente.monto,
     periodicidad: body.periodicidad ?? existente.periodicidad,
     fecha_inicio: body.fecha_inicio ?? existente.fecha_inicio,
