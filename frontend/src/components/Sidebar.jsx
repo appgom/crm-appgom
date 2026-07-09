@@ -56,9 +56,7 @@ export default function Sidebar({ open, onClose }) {
         } md:translate-x-0`}
       >
         <div className="px-6 mb-8 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-orange to-brand-purple flex items-center justify-center text-white font-bold text-sm shrink-0">
-            AG
-          </div>
+          <img src="/logo.svg" alt="Appgom" className="w-10 h-10 shrink-0" />
           <div className="overflow-hidden flex-1">
             <h1 className="font-display-sm text-[18px] leading-tight font-bold text-on-surface truncate">Appgom CRM</h1>
             <p className="font-label-md text-label-md text-secondary truncate">Panel de administración</p>

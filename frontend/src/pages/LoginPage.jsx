@@ -34,9 +34,7 @@ export default function LoginPage({ onLogin }) {
         <div className="absolute top-1/3 right-1/4 w-64 h-64 rounded-full bg-brand-blue/20 blur-3xl"></div>
 
         <div className="relative z-10 max-w-md">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-orange to-brand-purple flex items-center justify-center text-white font-bold text-2xl mb-8 shadow-lg shadow-brand-orange/20">
-            AG
-          </div>
+          <img src="/logo.svg" alt="Appgom" className="w-16 h-16 mb-8 drop-shadow-lg" />
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Appgom <span className="text-brand-orange">CRM</span>
           </h1>
@@ -50,9 +48,7 @@ export default function LoginPage({ onLogin }) {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-orange to-brand-purple flex items-center justify-center text-white font-bold text-sm">
-              AG
-            </div>
+            <img src="/logo.svg" alt="Appgom" className="w-11 h-11" />
             <span className="text-xl font-bold text-on-surface">Appgom CRM</span>
           </div>
 
