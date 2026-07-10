@@ -159,7 +159,9 @@ export default function NuevoContratoPage() {
               />
             </div>
             <div>
-              <label className="block font-label-md text-label-md text-secondary mb-2">Monto por periodo</label>
+              <label className="block font-label-md text-label-md text-secondary mb-2">
+                {form.modalidad_facturacion === 'recurrente' ? 'Monto por periodo' : 'Monto total'}
+              </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary">$</span>
                 <input
@@ -173,20 +175,6 @@ export default function NuevoContratoPage() {
               </div>
             </div>
             <div>
-              <label className="block font-label-md text-label-md text-secondary mb-2">Periodicidad</label>
-              <select
-                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
-                value={form.periodicidad}
-                onChange={(e) => setForm({ ...form, periodicidad: e.target.value })}
-              >
-                <option value="semanal">Semanal</option>
-                <option value="quincenal">Quincenal</option>
-                <option value="mensual">Mensual</option>
-                <option value="trimestral">Trimestral</option>
-                <option value="anual">Anual</option>
-              </select>
-            </div>
-            <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">Modalidad de facturación</label>
               <select
                 className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
@@ -196,8 +184,25 @@ export default function NuevoContratoPage() {
                 <option value="recurrente">Recurrente</option>
                 <option value="bolsa_horas">Bolsa de horas</option>
                 <option value="por_ticket">Por ticket</option>
+                <option value="proyecto_unico">Proyecto único</option>
               </select>
             </div>
+            {form.modalidad_facturacion === 'recurrente' && (
+              <div>
+                <label className="block font-label-md text-label-md text-secondary mb-2">Periodicidad</label>
+                <select
+                  className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
+                  value={form.periodicidad}
+                  onChange={(e) => setForm({ ...form, periodicidad: e.target.value })}
+                >
+                  <option value="semanal">Semanal</option>
+                  <option value="quincenal">Quincenal</option>
+                  <option value="mensual">Mensual</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </div>
+            )}
             <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">Fecha de inicio</label>
               <input
@@ -205,12 +210,22 @@ export default function NuevoContratoPage() {
                 required
                 className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
                 value={form.fecha_inicio}
-                onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })}
+                onChange={(e) => {
+                  const fecha_inicio = e.target.value;
+                  const esPagoUnico = form.modalidad_facturacion !== 'recurrente';
+                  setForm((prev) => ({
+                    ...prev,
+                    fecha_inicio,
+                    fecha_proximo_vencimiento: !esEdicion && esPagoUnico ? fecha_inicio : prev.fecha_proximo_vencimiento,
+                  }));
+                }}
               />
             </div>
             <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">
-                {esEdicion ? 'Próximo vencimiento' : 'Primer vencimiento'}
+                {form.modalidad_facturacion === 'recurrente'
+                  ? esEdicion ? 'Próximo vencimiento' : 'Primer vencimiento'
+                  : 'Fecha de vencimiento del pago'}
               </label>
               <input
                 type="date"

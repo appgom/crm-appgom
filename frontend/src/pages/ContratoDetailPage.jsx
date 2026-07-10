@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import RegistrarPagoModal from '../components/RegistrarPagoModal';
+import BadgeTipoPago from '../components/BadgeTipoPago';
+import { etiquetaModalidad } from '../utils/modalidad';
 import { ConfirmDialog } from './ClientesPage';
 import { useAuth } from '../context/AuthContext';
 import { api, BASE_URL } from '../api/client';
@@ -129,9 +131,14 @@ export default function ContratoDetailPage() {
         <div className="md:col-span-8 bg-surface-container-lowest border border-border-subtle rounded-xl p-6">
           <h3 className="font-title-lg text-title-lg mb-6 text-on-surface">Información principal</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4">
-            <Field label="Monto por periodo" value={formatMoney(contrato.monto)} />
-            <Field label="Periodicidad" value={contrato.periodicidad} className="capitalize" />
-            <Field label="Modalidad" value={contrato.modalidad_facturacion} className="capitalize" />
+            <Field
+              label={contrato.modalidad_facturacion === 'recurrente' ? 'Monto por periodo' : 'Monto total'}
+              value={formatMoney(contrato.monto)}
+            />
+            {contrato.modalidad_facturacion === 'recurrente' && (
+              <Field label="Periodicidad" value={contrato.periodicidad} className="capitalize" />
+            )}
+            <Field label="Modalidad" value={etiquetaModalidad(contrato.modalidad_facturacion)} />
             <Field label="Fecha inicio" value={new Date(contrato.fecha_inicio).toLocaleDateString('es-MX')} />
             <Field label="Próximo vencimiento" value={new Date(contrato.fecha_proximo_vencimiento).toLocaleDateString('es-MX')} />
             <div>
@@ -188,6 +195,7 @@ export default function ContratoDetailPage() {
                   <tr>
                     <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Fecha</th>
                     <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto aplicado</th>
+                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Tipo</th>
                     <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Método</th>
                     <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Referencia</th>
                     <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Comprobante</th>
@@ -204,6 +212,9 @@ export default function ContratoDetailPage() {
                             + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')} ({formatMoney(p.monto_total)} total)
                           </span>
                         )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <BadgeTipoPago tipo={p.tipo_aplicacion} />
                       </td>
                       <td className="px-6 py-4 capitalize">{p.metodo}</td>
                       <td className="px-6 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
@@ -234,6 +245,7 @@ export default function ContratoDetailPage() {
                     <span className="text-sm text-text-muted">{new Date(p.fecha).toLocaleDateString('es-MX')}</span>
                     <span className="font-bold text-on-surface">{formatMoney(p.monto_aplicado)}</span>
                   </div>
+                  <BadgeTipoPago tipo={p.tipo_aplicacion} className="mb-1" />
                   {p.otros_servicios?.length > 0 && (
                     <p className="text-xs text-action-blue mb-1">
                       + {p.otros_servicios.map((o) => o.tipo_servicio).join(', ')} ({formatMoney(p.monto_total)} total)
@@ -268,7 +280,8 @@ export default function ContratoDetailPage() {
           contratoId={contrato.id}
           cargoId={saldo?.cargo_pendiente?.id}
           tipoServicio={servicio?.nombre}
-          montoSugerido={saldo?.cargo_pendiente?.monto ?? contrato.monto}
+          montoSugerido={saldo?.saldo_pendiente ?? contrato.monto}
+          permitirParcial={contrato.modalidad_facturacion === 'proyecto_unico'}
           onClose={() => setShowModal(false)}
           onSaved={() => {
             setShowModal(false);

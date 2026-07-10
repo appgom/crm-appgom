@@ -56,17 +56,17 @@ export default function VencimientosPage() {
           <>
             {/* Tabla — desktop/tablet */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse min-w-[950px]">
+              <table className="w-full text-left border-collapse min-w-[1100px]">
                 <thead>
                   <tr className="bg-surface-base border-b border-border-subtle">
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cliente</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Servicio</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Pagado</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Saldo</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Vencimiento</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center">Días de atraso</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cliente</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Servicio</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Pagado</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Saldo</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider whitespace-nowrap">Vencimiento</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center whitespace-nowrap">Días de atraso</th>
+                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
@@ -74,31 +74,31 @@ export default function VencimientosPage() {
                     const estado = estadoVencimiento(v);
                     return (
                       <tr key={v.cargo_id} className="hover:bg-surface-base transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <Link to={`/clientes/${v.cliente_id}`} className="font-semibold text-on-surface hover:text-action-blue block">
                             {v.cliente_nombre}
                           </Link>
                           <span className="text-xs text-text-muted">{v.cliente_email}</span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <Link to={`/contratos/${v.contrato_id}`} className="text-action-blue hover:underline">
                             {v.tipo_servicio}
                           </Link>
                           {v.numero_contrato && <span className="block text-xs text-text-muted">{v.numero_contrato}</span>}
                         </td>
-                        <td className="px-6 py-4 text-right">{formatMoney(v.monto)}</td>
-                        <td className="px-6 py-4 text-right text-status-success">{formatMoney(v.total_pagado)}</td>
-                        <td className="px-6 py-4 text-right font-semibold">{formatMoney(v.saldo_pendiente)}</td>
-                        <td className="px-6 py-4">{new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${estado.className}`}>
+                        <td className="px-4 py-4 text-right whitespace-nowrap">{formatMoney(v.monto)}</td>
+                        <td className="px-4 py-4 text-right text-status-success whitespace-nowrap">{formatMoney(v.total_pagado)}</td>
+                        <td className="px-4 py-4 text-right font-semibold whitespace-nowrap">{formatMoney(v.saldo_pendiente)}</td>
+                        <td className="px-4 py-4 whitespace-nowrap">{new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}</td>
+                        <td className="px-4 py-4 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${estado.className}`}>
                             {estado.label}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 py-4 text-right">
                           <button
                             onClick={() => setPagando(v)}
-                            className="px-3 py-1.5 bg-action-blue text-white rounded-lg text-xs font-semibold hover:bg-primary transition-all flex items-center gap-1 ml-auto"
+                            className="px-3 py-1.5 bg-action-blue text-white rounded-lg text-xs font-semibold hover:bg-primary transition-all flex items-center gap-1 ml-auto whitespace-nowrap"
                           >
                             <span className="material-symbols-outlined text-[16px]">add_card</span>
                             Registrar pago
@@ -174,6 +174,7 @@ export default function VencimientosPage() {
           cargoId={pagando.cargo_id}
           tipoServicio={pagando.tipo_servicio}
           montoSugerido={pagando.saldo_pendiente}
+          permitirParcial={pagando.modalidad_facturacion === 'proyecto_unico'}
           onClose={() => setPagando(null)}
           onSaved={() => {
             setPagando(null);

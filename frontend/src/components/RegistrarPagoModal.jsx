@@ -12,11 +12,19 @@ export default function RegistrarPagoModal({
   cargoId,
   tipoServicio,
   montoSugerido,
+  permitirParcial = true,
   onClose,
   onSaved,
 }) {
   const [aplicaciones, setAplicaciones] = useState([
-    { contrato_id: contratoId, cargo_id: cargoId || null, tipo_servicio: tipoServicio, monto: montoSugerido ?? '' },
+    {
+      contrato_id: contratoId,
+      cargo_id: cargoId || null,
+      tipo_servicio: tipoServicio,
+      monto: montoSugerido ?? '',
+      saldo_pendiente: montoSugerido ?? null,
+      permitir_parcial: permitirParcial,
+    },
   ]);
   const [pendientes, setPendientes] = useState([]);
   const [cargoParaAgregar, setCargoParaAgregar] = useState('');
@@ -44,7 +52,14 @@ export default function RegistrarPagoModal({
     const saldoPendiente = Math.max(Number(cargo.monto) - Number(cargo.total_pagado), 0);
     setAplicaciones((prev) => [
       ...prev,
-      { contrato_id: cargo.contrato_id, cargo_id: cargo.cargo_id, tipo_servicio: cargo.tipo_servicio, monto: saldoPendiente },
+      {
+        contrato_id: cargo.contrato_id,
+        cargo_id: cargo.cargo_id,
+        tipo_servicio: cargo.tipo_servicio,
+        monto: saldoPendiente,
+        saldo_pendiente: saldoPendiente,
+        permitir_parcial: cargo.modalidad_facturacion === 'proyecto_unico',
+      },
     ]);
     setCargoParaAgregar('');
   }
@@ -144,27 +159,48 @@ export default function RegistrarPagoModal({
 
           <div className="pt-4 border-t border-border-subtle space-y-3">
             <p className="font-label-md text-label-md text-secondary uppercase tracking-wider">Aplicar a</p>
-            {aplicaciones.map((a, i) => (
-              <div key={a.cargo_id ?? i} className="flex items-center gap-2">
-                <span className="flex-1 min-w-0 truncate text-sm text-text-main">{a.tipo_servicio}</span>
-                <div className="relative w-24 sm:w-32 shrink-0">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    className="w-full bg-surface-base border border-border-subtle rounded-lg pl-6 pr-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-action-blue"
-                    value={a.monto}
-                    onChange={(e) => actualizarMonto(i, e.target.value)}
-                  />
+            {aplicaciones.map((a, i) => {
+              const bloqueada = !a.permitir_parcial;
+              const montoIngresado = Number(a.monto) || 0;
+              const tieneSaldoRef = a.saldo_pendiente != null;
+              const esAnticipo = tieneSaldoRef && !bloqueada && montoIngresado > 0 && montoIngresado < Number(a.saldo_pendiente);
+              const esLiquidacion = tieneSaldoRef && !bloqueada && montoIngresado > 0 && montoIngresado >= Number(a.saldo_pendiente);
+              return (
+                <div key={a.cargo_id ?? i}>
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 min-w-0 truncate text-sm text-text-main">{a.tipo_servicio}</span>
+                    <div className="relative w-24 sm:w-32 shrink-0">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        disabled={bloqueada}
+                        className="w-full bg-surface-base border border-border-subtle rounded-lg pl-6 pr-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-action-blue disabled:opacity-60"
+                        value={bloqueada ? (a.saldo_pendiente ?? a.monto) : a.monto}
+                        onChange={(e) => actualizarMonto(i, e.target.value)}
+                      />
+                    </div>
+                    {aplicaciones.length > 1 && (
+                      <button type="button" className="p-1 text-secondary hover:text-status-error shrink-0" onClick={() => quitarAplicacion(i)}>
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                      </button>
+                    )}
+                  </div>
+                  {bloqueada && (
+                    <p className="text-xs text-text-muted mt-1">Este servicio se cobra en una sola exhibición, sin anticipos.</p>
+                  )}
+                  {esAnticipo && (
+                    <p className="text-xs text-status-warning mt-1">
+                      Anticipo — quedará pendiente {formatMoney(Number(a.saldo_pendiente) - montoIngresado)}
+                    </p>
+                  )}
+                  {esLiquidacion && (
+                    <p className="text-xs text-status-success mt-1">Liquida el saldo pendiente por completo</p>
+                  )}
                 </div>
-                {aplicaciones.length > 1 && (
-                  <button type="button" className="p-1 text-secondary hover:text-status-error shrink-0" onClick={() => quitarAplicacion(i)}>
-                    <span className="material-symbols-outlined text-[18px]">close</span>
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             {opcionesDisponibles.length > 0 && (
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">

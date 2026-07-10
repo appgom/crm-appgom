@@ -63,6 +63,18 @@ async function update(req, res) {
     estatus: body.estatus ?? existente.estatus,
     modalidad_facturacion: body.modalidad_facturacion ?? existente.modalidad_facturacion,
   });
+
+  // Si se corrigio manualmente la fecha/monto del contrato, el cargo pendiente
+  // (generado con los valores anteriores) debe reflejar los valores nuevos,
+  // para que el saldo y los dias de atraso no queden desincronizados.
+  const cargoPendiente = await cargoModel.findPendienteActual(contrato.id);
+  if (cargoPendiente) {
+    await cargoModel.actualizarPendiente(cargoPendiente.id, {
+      fecha_vencimiento: contrato.fecha_proximo_vencimiento,
+      monto: cargoPendiente.estatus === 'pendiente' ? contrato.monto : cargoPendiente.monto,
+    });
+  }
+
   res.json(contrato);
 }
 

@@ -19,6 +19,12 @@ async function findByContratoId(contratoId) {
       p.comprobante_nombre_original,
       pa.monto AS monto_aplicado,
       pa.cargo_id,
+      CASE
+        WHEN pa.cargo_id IS NULL THEN NULL
+        WHEN SUM(pa.monto) OVER (PARTITION BY pa.cargo_id ORDER BY p.fecha, p.id, pa.id) < cg.monto THEN 'anticipo'
+        WHEN ROW_NUMBER() OVER (PARTITION BY pa.cargo_id ORDER BY p.fecha, p.id, pa.id) = 1 THEN 'pago_total'
+        ELSE 'resto'
+      END AS tipo_aplicacion,
       (
         SELECT json_agg(json_build_object('contrato_id', c2.id, 'tipo_servicio', cs2.nombre, 'monto', pa2.monto))
         FROM pago_aplicaciones pa2
@@ -28,6 +34,7 @@ async function findByContratoId(contratoId) {
       ) AS otros_servicios
     FROM pago_aplicaciones pa
     JOIN pagos p ON p.id = pa.pago_id
+    LEFT JOIN cargos cg ON cg.id = pa.cargo_id
     WHERE pa.contrato_id = $1
     ORDER BY p.fecha DESC`,
     [contratoId]
@@ -47,6 +54,12 @@ async function findByClienteId(clienteId) {
       pa.monto AS monto_aplicado,
       pa.contrato_id,
       cs.nombre AS tipo_servicio,
+      CASE
+        WHEN pa.cargo_id IS NULL THEN NULL
+        WHEN SUM(pa.monto) OVER (PARTITION BY pa.cargo_id ORDER BY p.fecha, p.id, pa.id) < cg.monto THEN 'anticipo'
+        WHEN ROW_NUMBER() OVER (PARTITION BY pa.cargo_id ORDER BY p.fecha, p.id, pa.id) = 1 THEN 'pago_total'
+        ELSE 'resto'
+      END AS tipo_aplicacion,
       (
         SELECT json_agg(json_build_object('contrato_id', c2.id, 'tipo_servicio', cs2.nombre, 'monto', pa2.monto))
         FROM pago_aplicaciones pa2
@@ -58,6 +71,7 @@ async function findByClienteId(clienteId) {
     JOIN pagos p ON p.id = pa.pago_id
     JOIN contratos c ON c.id = pa.contrato_id
     JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
+    LEFT JOIN cargos cg ON cg.id = pa.cargo_id
     WHERE c.cliente_id = $1
     ORDER BY p.fecha DESC`,
     [clienteId]

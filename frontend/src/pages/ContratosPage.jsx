@@ -5,6 +5,8 @@ import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import { ConfirmDialog } from './ClientesPage';
 import { useAuth } from '../context/AuthContext';
+import { estadoVencimiento } from '../utils/vencimiento';
+import { etiquetaModalidad } from '../utils/modalidad';
 import { api } from '../api/client';
 
 const PAGE_SIZE = 10;
@@ -19,6 +21,7 @@ export default function ContratosPage() {
   const [contratos, setContratos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [servicios, setServicios] = useState([]);
+  const [vencimientosPorContrato, setVencimientosPorContrato] = useState({});
   const [filtroEstatus, setFiltroEstatus] = useState('todos');
   const [filtroServicio, setFiltroServicio] = useState('todos');
   const [page, setPage] = useState(1);
@@ -30,15 +33,26 @@ export default function ContratosPage() {
 
   function cargarDatos() {
     setLoading(true);
-    Promise.all([api.get('/contratos'), api.get('/clientes'), api.get('/catalogo-servicios')])
-      .then(([contratosData, clientesData, serviciosData]) => {
+    Promise.all([api.get('/contratos'), api.get('/clientes'), api.get('/catalogo-servicios'), api.get('/vencimientos')])
+      .then(([contratosData, clientesData, serviciosData, vencimientosData]) => {
         setContratos(contratosData);
         setClientes(clientesData);
         setServicios(serviciosData);
+        const porContrato = {};
+        vencimientosData.forEach((v) => {
+          porContrato[v.contrato_id] = v;
+        });
+        setVencimientosPorContrato(porContrato);
         setError(null);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+  }
+
+  function badgeCobro(contrato) {
+    const v = vencimientosPorContrato[contrato.id];
+    if (!v) return { label: 'Al corriente', className: 'bg-status-success/15 text-status-success' };
+    return estadoVencimiento(v);
   }
 
   useEffect(() => {
@@ -163,6 +177,7 @@ export default function ContratosPage() {
                     <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Periodicidad</th>
                     <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Próximo vencimiento</th>
                     <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Estatus</th>
+                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Cobro</th>
                     <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -191,12 +206,24 @@ export default function ContratosPage() {
                             </Link>
                           </td>
                           <td className="px-4 py-3 text-right font-mono-label font-bold">${Number(c.monto).toFixed(2)}</td>
-                          <td className="px-4 py-3 text-secondary font-body-sm capitalize">{c.periodicidad}</td>
+                          <td className="px-4 py-3 text-secondary font-body-sm capitalize">
+                            {c.modalidad_facturacion === 'recurrente' ? c.periodicidad : '—'}
+                          </td>
                           <td className="px-4 py-3 text-on-surface font-body-sm">
                             {new Date(c.fecha_proximo_vencimiento).toLocaleDateString('es-MX')}
                           </td>
                           <td className="px-4 py-3">
                             <StatusBadge status={c.estatus} label={c.estatus} />
+                          </td>
+                          <td className="px-4 py-3">
+                            {(() => {
+                              const cobro = badgeCobro(c);
+                              return (
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${cobro.className}`}>
+                                  {cobro.label}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1">
@@ -222,7 +249,7 @@ export default function ContratosPage() {
                         {expandido && (
                           <tr className="bg-surface-base/60">
                             <td></td>
-                            <td colSpan={7} className="px-4 pb-4 pt-1">
+                            <td colSpan={8} className="px-4 pb-4 pt-1">
                               <div className="border border-border-subtle rounded-lg bg-surface-card p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
                                   <p className="font-label-md text-label-md text-text-muted">Número de contrato</p>
@@ -230,7 +257,7 @@ export default function ContratosPage() {
                                 </div>
                                 <div>
                                   <p className="font-label-md text-label-md text-text-muted">Modalidad</p>
-                                  <p className="text-sm text-text-main capitalize">{c.modalidad_facturacion}</p>
+                                  <p className="text-sm text-text-main">{etiquetaModalidad(c.modalidad_facturacion)}</p>
                                 </div>
                                 <div>
                                   <p className="font-label-md text-label-md text-text-muted">Fecha de inicio</p>
@@ -305,8 +332,21 @@ export default function ContratosPage() {
 
                     <div className="flex items-center justify-between mt-3 text-sm">
                       <span className="font-mono-label font-bold text-text-main">${Number(c.monto).toFixed(2)}</span>
-                      <span className="text-secondary capitalize">{c.periodicidad}</span>
+                      <span className="text-secondary capitalize">
+                        {c.modalidad_facturacion === 'recurrente' ? c.periodicidad : '—'}
+                      </span>
                       <StatusBadge status={c.estatus} label={c.estatus} />
+                    </div>
+
+                    <div className="flex items-center justify-end mt-2">
+                      {(() => {
+                        const cobro = badgeCobro(c);
+                        return (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${cobro.className}`}>
+                            {cobro.label}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     <div className="flex items-center justify-between mt-2">

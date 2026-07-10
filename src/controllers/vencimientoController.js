@@ -15,6 +15,7 @@ async function list(req, res) {
       contrato_id: c.contrato_id,
       numero_contrato: c.numero_contrato,
       estatus_contrato: c.estatus_contrato,
+      modalidad_facturacion: c.modalidad_facturacion,
       tipo_servicio: c.tipo_servicio,
       cliente_id: c.cliente_id,
       cliente_nombre: c.cliente_nombre,

@@ -52,16 +52,14 @@ async function create({
     );
     const contrato = rows[0];
 
-    if (contrato.modalidad_facturacion === 'recurrente') {
-      await cargoModel.create(
-        {
-          contrato_id: contrato.id,
-          fecha_vencimiento: contrato.fecha_proximo_vencimiento,
-          monto: contrato.monto,
-        },
-        client
-      );
-    }
+    await cargoModel.create(
+      {
+        contrato_id: contrato.id,
+        fecha_vencimiento: contrato.fecha_proximo_vencimiento,
+        monto: contrato.monto,
+      },
+      client
+    );
 
     await client.query('COMMIT');
     return contrato;

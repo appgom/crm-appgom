@@ -29,6 +29,14 @@ async function create({ contrato_id, fecha_vencimiento, monto }, client = pool) 
   return rows[0];
 }
 
+async function actualizarPendiente(id, { fecha_vencimiento, monto }, client = pool) {
+  const { rows } = await client.query(
+    'UPDATE cargos SET fecha_vencimiento = $1, monto = $2 WHERE id = $3 RETURNING *',
+    [fecha_vencimiento, monto, id]
+  );
+  return rows[0];
+}
+
 async function updateEstatus(id, estatus, client = pool) {
   const { rows } = await client.query(
     'UPDATE cargos SET estatus = $1 WHERE id = $2 RETURNING *',
@@ -53,6 +61,7 @@ async function findPendientesByClienteId(clienteId) {
       cg.monto,
       cg.estatus,
       c.id AS contrato_id,
+      c.modalidad_facturacion,
       cs.nombre AS tipo_servicio,
       COALESCE((SELECT SUM(monto) FROM pago_aplicaciones WHERE cargo_id = cg.id), 0) AS total_pagado
     FROM cargos cg
@@ -75,6 +84,7 @@ async function findPendientesConDetalle() {
       c.id AS contrato_id,
       c.numero_contrato,
       c.estatus AS estatus_contrato,
+      c.modalidad_facturacion,
       cs.nombre AS tipo_servicio,
       cl.id AS cliente_id,
       cl.nombre AS cliente_nombre,
@@ -95,6 +105,7 @@ module.exports = {
   findPendienteActual,
   findPendientesByClienteId,
   create,
+  actualizarPendiente,
   updateEstatus,
   sumPagosByCargoId,
   findPendientesConDetalle,

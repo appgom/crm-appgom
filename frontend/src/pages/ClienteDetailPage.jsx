@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import { ClienteFormModal } from './ClientesPage';
+import BadgeTipoPago from '../components/BadgeTipoPago';
 import { api, BASE_URL } from '../api/client';
 
 function formatMoney(n) {
@@ -268,6 +269,7 @@ export default function ClienteDetailPage() {
                     <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Fecha</th>
                     <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Servicio</th>
                     <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider text-right">Monto</th>
+                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Tipo</th>
                     <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Método</th>
                     <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Referencia</th>
                     <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Comprobante</th>
@@ -286,6 +288,9 @@ export default function ClienteDetailPage() {
                         )}
                       </td>
                       <td className="px-8 py-4 text-right font-bold text-text-main">{formatMoney(p.monto_aplicado)}</td>
+                      <td className="px-8 py-4">
+                        <BadgeTipoPago tipo={p.tipo_aplicacion} />
+                      </td>
                       <td className="px-8 py-4 capitalize">{p.metodo}</td>
                       <td className="px-8 py-4 font-mono-label text-secondary">{p.referencia || '—'}</td>
                       <td className="px-8 py-4">
@@ -322,6 +327,7 @@ export default function ClienteDetailPage() {
                     </div>
                     <span className="font-bold text-text-main shrink-0">{formatMoney(p.monto_aplicado)}</span>
                   </div>
+                  <BadgeTipoPago tipo={p.tipo_aplicacion} className="mb-1" />
                   <div className="flex items-center justify-between text-sm mt-2">
                     <span className="capitalize text-secondary">{p.metodo}</span>
                     <span className="font-mono-label text-xs text-secondary">{p.referencia || '—'}</span>
