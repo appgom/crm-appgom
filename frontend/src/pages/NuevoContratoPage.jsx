@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
+import ClienteBuscador from '../components/ClienteBuscador';
 import { api } from '../api/client';
 
 export default function NuevoContratoPage() {
@@ -59,6 +60,10 @@ export default function NuevoContratoPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!form.cliente_id) {
+      setError('Selecciona un cliente válido de la lista de resultados.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -105,18 +110,12 @@ export default function NuevoContratoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">Cliente</label>
-              <select
-                required
-                disabled={esEdicion}
-                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base disabled:opacity-60"
+              <ClienteBuscador
+                clientes={clientes}
                 value={form.cliente_id}
-                onChange={(e) => setForm({ ...form, cliente_id: e.target.value })}
-              >
-                <option value="" disabled>Selecciona un cliente</option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
+                onChange={(cliente_id) => setForm({ ...form, cliente_id })}
+                disabled={esEdicion}
+              />
             </div>
             <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">Tipo de servicio</label>
