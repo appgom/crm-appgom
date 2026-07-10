@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 
 const PAGE_SIZE = 10;
 
 export default function ClientesPage() {
+  const { usuario } = useAuth();
   const [clientes, setClientes] = useState([]);
   const [contratos, setContratos] = useState([]);
   const [vencimientos, setVencimientos] = useState([]);
@@ -182,13 +184,15 @@ export default function ClientesPage() {
                               >
                                 <span className="material-symbols-outlined text-[18px]">edit</span>
                               </button>
-                              <button
-                                title="Eliminar"
-                                className="p-1.5 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
-                                onClick={() => setEliminando(cliente)}
-                              >
-                                <span className="material-symbols-outlined text-[18px]">delete</span>
-                              </button>
+                              {usuario?.rol === 'admin' && (
+                                <button
+                                  title="Eliminar"
+                                  className="p-1.5 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
+                                  onClick={() => setEliminando(cliente)}
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -249,13 +253,15 @@ export default function ClientesPage() {
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
-                        <button
-                          title="Eliminar"
-                          className="p-2 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
-                          onClick={() => setEliminando(cliente)}
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
+                        {usuario?.rol === 'admin' && (
+                          <button
+                            title="Eliminar"
+                            className="p-2 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
+                            onClick={() => setEliminando(cliente)}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 

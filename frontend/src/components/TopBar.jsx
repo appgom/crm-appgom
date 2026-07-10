@@ -1,13 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api/client';
+import { estadoVencimiento } from '../utils/vencimiento';
+
+function formatMoney(n) {
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
+}
 
 export default function TopBar({ searchPlaceholder = 'Buscar...', onSearch, onMenuClick }) {
   const { usuario, logout } = useAuth();
+  const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [avisosAbiertos, setAvisosAbiertos] = useState(false);
   const [busquedaMovilAbierta, setBusquedaMovilAbierta] = useState(false);
+  const [avisos, setAvisos] = useState([]);
   const iniciales = usuario?.nombre
     ? usuario.nombre.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
     : '';
+
+  useEffect(() => {
+    api.get('/vencimientos')
+      .then((data) => {
+        const relevantes = data
+          .map((v) => ({ ...v, estado: estadoVencimiento(v) }))
+          .filter((v) => v.estado.urgencia !== 'lejano')
+          .sort((a, b) => (b.dias_atraso || 0) - (a.dias_atraso || 0));
+        setAvisos(relevantes);
+      })
+      .catch(() => {});
+  }, []);
+
+  const vencidos = avisos.filter((v) => v.estado.urgencia === 'vencido').length;
 
   return (
     <header className="h-16 sticky top-0 bg-surface-container-lowest border-b border-border-subtle flex justify-between items-center gap-2 px-3 md:px-gutter z-40 relative">
@@ -38,9 +62,68 @@ export default function TopBar({ searchPlaceholder = 'Buscar...', onSearch, onMe
         >
           <span className="material-symbols-outlined">search</span>
         </button>
-        <button className="hidden sm:block text-secondary hover:text-action-blue transition-colors relative">
-          <span className="material-symbols-outlined">notifications</span>
-        </button>
+        <div className="relative">
+          <button
+            className="text-secondary hover:text-action-blue transition-colors relative p-2 -m-2"
+            onClick={() => setAvisosAbiertos((v) => !v)}
+          >
+            <span className="material-symbols-outlined">notifications</span>
+            {avisos.length > 0 && (
+              <span
+                className={`absolute top-0 right-0 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                  vencidos > 0 ? 'bg-status-error text-white' : 'bg-status-warning text-black'
+                }`}
+              >
+                {avisos.length}
+              </span>
+            )}
+          </button>
+          {avisosAbiertos && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setAvisosAbiertos(false)} />
+              <div className="absolute right-0 top-full mt-2 w-80 max-w-[90vw] bg-surface-container-lowest border border-border-subtle rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-border-subtle">
+                  <p className="font-semibold text-on-surface text-sm">Avisos de cobranza</p>
+                </div>
+                <div className="max-h-96 overflow-y-auto divide-y divide-border-subtle">
+                  {avisos.length === 0 && (
+                    <p className="px-4 py-6 text-sm text-secondary text-center">Sin avisos pendientes.</p>
+                  )}
+                  {avisos.slice(0, 8).map((v) => (
+                    <button
+                      key={v.cargo_id}
+                      className="w-full text-left px-4 py-3 hover:bg-surface-base transition-colors"
+                      onClick={() => {
+                        setAvisosAbiertos(false);
+                        navigate(`/contratos/${v.contrato_id}`);
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-on-surface truncate">{v.cliente_nombre}</p>
+                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${v.estado.className}`}>
+                          {v.estado.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-secondary truncate">{v.tipo_servicio}</p>
+                      <p className="text-xs text-text-muted mt-0.5">{formatMoney(v.saldo_pendiente)}</p>
+                    </button>
+                  ))}
+                </div>
+                {avisos.length > 0 && (
+                  <button
+                    className="w-full text-center px-4 py-2.5 text-sm text-action-blue hover:bg-surface-base transition-colors font-medium border-t border-border-subtle"
+                    onClick={() => {
+                      setAvisosAbiertos(false);
+                      navigate('/vencimientos');
+                    }}
+                  >
+                    Ver todas las cuentas por cobrar
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
         <div className="hidden md:block h-8 w-px bg-border-subtle"></div>
         <div className="relative">
           <button className="flex items-center gap-2 md:gap-3" onClick={() => setMenuAbierto((v) => !v)}>
@@ -51,6 +134,16 @@ export default function TopBar({ searchPlaceholder = 'Buscar...', onSearch, onMe
           </button>
           {menuAbierto && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-lowest border border-border-subtle rounded-lg shadow-lg py-1 z-50">
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-secondary hover:bg-surface-container-low flex items-center gap-2"
+                onClick={() => {
+                  setMenuAbierto(false);
+                  navigate('/perfil');
+                }}
+              >
+                <span className="material-symbols-outlined text-[18px]">person</span>
+                Mi perfil
+              </button>
               <button
                 className="w-full text-left px-4 py-2 text-sm text-status-error hover:bg-surface-container-low flex items-center gap-2"
                 onClick={logout}

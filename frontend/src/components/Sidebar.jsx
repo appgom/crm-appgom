@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { to: '/clientes', label: 'Clientes', icon: 'group' },
   { to: '/contratos', label: 'Contratos', icon: 'description' },
   { to: '/vencimientos', label: 'Cuentas por cobrar', icon: 'event_busy' },
-  { to: '/proveedores', label: 'Proveedores', icon: 'inventory_2', disabled: true },
+  { to: '/suscripciones', label: 'Suscripciones', icon: 'subscriptions' },
 ];
 
 function NavItem({ to, label, icon, end, disabled, onNavigate }) {
@@ -35,6 +35,26 @@ function NavItem({ to, label, icon, end, disabled, onNavigate }) {
     >
       <span className="material-symbols-outlined">{icon}</span>
       <span className="font-label-md text-label-md">{label}</span>
+    </NavLink>
+  );
+}
+
+function ConfiguracionSubItem({ tab, label, onNavigate }) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const isActive = location.pathname === '/configuracion' && (params.get('tab') || 'catalogo') === tab;
+
+  return (
+    <NavLink
+      to={`/configuracion?tab=${tab}`}
+      onClick={onNavigate}
+      className={`flex items-center gap-3 pl-12 pr-4 py-2.5 text-sm transition-colors ${
+        isActive
+          ? 'text-action-blue font-bold'
+          : 'text-secondary hover:bg-surface-container-low hover:text-on-surface'
+      }`}
+    >
+      {label}
     </NavLink>
   );
 }
@@ -71,6 +91,10 @@ export default function Sidebar({ open, onClose }) {
           ))}
           <div className="pt-4 mt-4 border-t border-border-subtle">
             <NavItem to="/configuracion" label="Configuración" icon="settings" onNavigate={onClose} />
+            <ConfiguracionSubItem tab="catalogo" label="Catálogo de servicios" onNavigate={onClose} />
+            {usuario?.rol === 'admin' && (
+              <ConfiguracionSubItem tab="usuarios" label="Usuarios" onNavigate={onClose} />
+            )}
           </div>
         </nav>
         <div className="px-4 mt-auto pt-4">

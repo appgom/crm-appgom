@@ -20,6 +20,7 @@ async function create({
   cliente_id,
   tipo_servicio_id,
   descripcion,
+  notas_internas,
   monto,
   periodicidad,
   fecha_inicio,
@@ -33,13 +34,14 @@ async function create({
 
     const { rows } = await client.query(
       `INSERT INTO contratos
-        (cliente_id, tipo_servicio_id, descripcion, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, estatus, modalidad_facturacion)
-       VALUES ($1, $2, $3, 'CT-' || LPAD(nextval('contrato_numero_seq')::text, 5, '0'), $4, $5, $6, $7, COALESCE($8, 'activo')::estatus_contrato_enum, COALESCE($9, 'recurrente')::modalidad_facturacion_enum)
+        (cliente_id, tipo_servicio_id, descripcion, notas_internas, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, estatus, modalidad_facturacion)
+       VALUES ($1, $2, $3, $4, 'CT-' || LPAD(nextval('contrato_numero_seq')::text, 5, '0'), $5, $6, $7, $8, COALESCE($9, 'activo')::estatus_contrato_enum, COALESCE($10, 'recurrente')::modalidad_facturacion_enum)
        RETURNING *`,
       [
         cliente_id,
         tipo_servicio_id,
         descripcion,
+        notas_internas,
         monto,
         periodicidad,
         fecha_inicio,
@@ -74,6 +76,7 @@ async function create({
 async function update(id, {
   tipo_servicio_id,
   descripcion,
+  notas_internas,
   monto,
   periodicidad,
   fecha_inicio,
@@ -85,17 +88,19 @@ async function update(id, {
     `UPDATE contratos SET
       tipo_servicio_id = $1,
       descripcion = $2,
-      monto = $3,
-      periodicidad = $4,
-      fecha_inicio = $5,
-      fecha_proximo_vencimiento = $6,
-      estatus = $7,
-      modalidad_facturacion = $8
-     WHERE id = $9
+      notas_internas = $3,
+      monto = $4,
+      periodicidad = $5,
+      fecha_inicio = $6,
+      fecha_proximo_vencimiento = $7,
+      estatus = $8,
+      modalidad_facturacion = $9
+     WHERE id = $10
      RETURNING *`,
     [
       tipo_servicio_id,
       descripcion,
+      notas_internas,
       monto,
       periodicidad,
       fecha_inicio,

@@ -6,7 +6,7 @@ function requireAuth(req, res, next) {
 
   try {
     const payload = verificarToken(token);
-    req.usuario = { id: payload.sub, email: payload.email };
+    req.usuario = { id: payload.sub, email: payload.email, rol: payload.rol };
     next();
   } catch {
     return res.status(401).json({ error: 'Sesión inválida o expirada' });

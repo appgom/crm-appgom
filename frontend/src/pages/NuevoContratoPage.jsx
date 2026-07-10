@@ -17,6 +17,7 @@ export default function NuevoContratoPage() {
     tipo_servicio_id: '',
     numero_contrato: '',
     descripcion: '',
+    notas_internas: '',
     monto: '',
     periodicidad: 'mensual',
     fecha_inicio: new Date().toISOString().slice(0, 10),
@@ -42,6 +43,7 @@ export default function NuevoContratoPage() {
             tipo_servicio_id: contratoData.tipo_servicio_id,
             numero_contrato: contratoData.numero_contrato || '',
             descripcion: contratoData.descripcion || '',
+            notas_internas: contratoData.notas_internas || '',
             monto: contratoData.monto,
             periodicidad: contratoData.periodicidad,
             fecha_inicio: contratoData.fecha_inicio.slice(0, 10),
@@ -136,6 +138,16 @@ export default function NuevoContratoPage() {
                 className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
                 value={form.descripcion}
                 onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block font-label-md text-label-md text-secondary mb-2">Notas internas (opcional)</label>
+              <textarea
+                rows={3}
+                placeholder="Notas visibles solo para el equipo, no se muestran al cliente."
+                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
+                value={form.notas_internas}
+                onChange={(e) => setForm({ ...form, notas_internas: e.target.value })}
               />
             </div>
             <div>

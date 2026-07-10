@@ -8,7 +8,10 @@ import ContratosPage from './pages/ContratosPage';
 import ContratoDetailPage from './pages/ContratoDetailPage';
 import NuevoContratoPage from './pages/NuevoContratoPage';
 import VencimientosPage from './pages/VencimientosPage';
+import ProveedoresPage from './pages/ProveedoresPage';
+import ProveedorDetailPage from './pages/ProveedorDetailPage';
 import ConfiguracionPage from './pages/ConfiguracionPage';
+import PerfilPage from './pages/PerfilPage';
 
 function RequireAuth({ children }) {
   const { usuario, loading } = useAuth();
@@ -40,7 +43,10 @@ function AppRoutes() {
       <Route path="/contratos/:id/editar" element={<RequireAuth><NuevoContratoPage /></RequireAuth>} />
       <Route path="/contratos/:id" element={<RequireAuth><ContratoDetailPage /></RequireAuth>} />
       <Route path="/vencimientos" element={<RequireAuth><VencimientosPage /></RequireAuth>} />
+      <Route path="/suscripciones" element={<RequireAuth><ProveedoresPage /></RequireAuth>} />
+      <Route path="/suscripciones/:id" element={<RequireAuth><ProveedorDetailPage /></RequireAuth>} />
       <Route path="/configuracion" element={<RequireAuth><ConfiguracionPage /></RequireAuth>} />
+      <Route path="/perfil" element={<RequireAuth><PerfilPage /></RequireAuth>} />
     </Routes>
   );
 }

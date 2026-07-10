@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
+import { estadoVencimiento, diasHasta } from '../utils/vencimiento';
 import { api } from '../api/client';
 
 function formatMoney(n) {
@@ -25,11 +26,6 @@ export default function DashboardPage() {
   const totalPorCobrar = vencimientos.reduce((sum, v) => sum + v.saldo_pendiente, 0);
   const clientesVencidos = new Set(vencimientos.filter((v) => v.vencido).map((v) => v.cliente_id)).size;
   const en7dias = vencimientos.filter((v) => !v.vencido && diasHasta(v.fecha_vencimiento) <= 7).length;
-
-  function diasHasta(fecha) {
-    const ms = new Date(fecha) - new Date();
-    return Math.ceil(ms / (1000 * 60 * 60 * 24));
-  }
 
   return (
     <Layout searchPlaceholder="Buscar clientes o contratos...">
@@ -88,62 +84,56 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
-                  {vencimientos.map((v) => (
-                    <tr
-                      key={v.cargo_id}
-                      onClick={() => navigate(`/contratos/${v.contrato_id}`)}
-                      className="hover:bg-surface-base transition-colors cursor-pointer"
-                    >
-                      <td className="px-6 py-4 font-semibold text-text-main">{v.cliente_nombre}</td>
-                      <td className="px-6 py-4 text-text-main">{v.tipo_servicio}</td>
-                      <td className="px-6 py-4 text-text-main text-right font-semibold">{formatMoney(v.saldo_pendiente)}</td>
-                      <td className="px-6 py-4 text-text-main">
-                        {new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {v.vencido ? (
-                          <span className="px-3 py-1 bg-error-container text-status-error rounded-full text-xs font-bold">
-                            {v.dias_atraso} días
+                  {vencimientos.map((v) => {
+                    const estado = estadoVencimiento(v);
+                    return (
+                      <tr
+                        key={v.cargo_id}
+                        onClick={() => navigate(`/contratos/${v.contrato_id}`)}
+                        className="hover:bg-surface-base transition-colors cursor-pointer"
+                      >
+                        <td className="px-6 py-4 font-semibold text-text-main">{v.cliente_nombre}</td>
+                        <td className="px-6 py-4 text-text-main">{v.tipo_servicio}</td>
+                        <td className="px-6 py-4 text-text-main text-right font-semibold">{formatMoney(v.saldo_pendiente)}</td>
+                        <td className="px-6 py-4 text-text-main">
+                          {new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${estado.className}`}>
+                            {estado.label}
                           </span>
-                        ) : (
-                          <span className="px-3 py-1 bg-surface-container text-secondary rounded-full text-xs font-medium">
-                            Por vencer
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Tarjetas — movil */}
             <div className="md:hidden divide-y divide-border-subtle">
-              {vencimientos.map((v) => (
-                <button
-                  key={v.cargo_id}
-                  onClick={() => navigate(`/contratos/${v.contrato_id}`)}
-                  className="w-full text-left px-4 py-4 active:bg-surface-base transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="font-semibold text-text-main">{v.cliente_nombre}</p>
-                    {v.vencido ? (
-                      <span className="shrink-0 px-2 py-0.5 bg-error-container text-status-error rounded-full text-xs font-bold">
-                        {v.dias_atraso}d atraso
+              {vencimientos.map((v) => {
+                const estado = estadoVencimiento(v);
+                return (
+                  <button
+                    key={v.cargo_id}
+                    onClick={() => navigate(`/contratos/${v.contrato_id}`)}
+                    className="w-full text-left px-4 py-4 active:bg-surface-base transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <p className="font-semibold text-text-main">{v.cliente_nombre}</p>
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-bold ${estado.className}`}>
+                        {estado.label}
                       </span>
-                    ) : (
-                      <span className="shrink-0 px-2 py-0.5 bg-surface-container text-secondary rounded-full text-xs font-medium">
-                        Por vencer
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-secondary mb-2">{v.tipo_servicio}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-muted">{new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}</span>
-                    <span className="font-semibold text-text-main">{formatMoney(v.saldo_pendiente)}</span>
-                  </div>
-                </button>
-              ))}
+                    </div>
+                    <p className="text-sm text-secondary mb-2">{v.tipo_servicio}</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-text-muted">{new Date(v.fecha_vencimiento).toLocaleDateString('es-MX')}</span>
+                      <span className="font-semibold text-text-main">{formatMoney(v.saldo_pendiente)}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </>
         )}

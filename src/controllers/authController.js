@@ -16,7 +16,7 @@ async function login(req, res) {
 
   const token = firmarToken(usuario);
   res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
-  res.json({ id: usuario.id, nombre: usuario.nombre, email: usuario.email });
+  res.json({ id: usuario.id, nombre: usuario.nombre, email: usuario.email, rol: usuario.rol });
 }
 
 function logout(req, res) {

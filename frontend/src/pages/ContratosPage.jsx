@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import { ConfirmDialog } from './ClientesPage';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 
 const PAGE_SIZE = 10;
@@ -14,6 +15,7 @@ function formatMoney(n) {
 
 export default function ContratosPage() {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [contratos, setContratos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [servicios, setServicios] = useState([]);
@@ -205,13 +207,15 @@ export default function ContratosPage() {
                               >
                                 <span className="material-symbols-outlined text-[18px]">edit</span>
                               </button>
-                              <button
-                                title="Eliminar"
-                                className="p-1.5 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
-                                onClick={() => setEliminando(c)}
-                              >
-                                <span className="material-symbols-outlined text-[18px]">delete</span>
-                              </button>
+                              {usuario?.rol === 'admin' && (
+                                <button
+                                  title="Eliminar"
+                                  className="p-1.5 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
+                                  onClick={() => setEliminando(c)}
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -287,6 +291,7 @@ export default function ContratosPage() {
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
+                        {usuario?.rol === 'admin' && (
                         <button
                           title="Eliminar"
                           className="p-2 text-secondary hover:text-status-error hover:bg-status-error/10 rounded"
@@ -294,6 +299,7 @@ export default function ContratosPage() {
                         >
                           <span className="material-symbols-outlined text-[18px]">delete</span>
                         </button>
+                        )}
                       </div>
                     </div>
 

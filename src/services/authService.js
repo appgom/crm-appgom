@@ -18,7 +18,7 @@ async function verifyPassword(password, hash) {
 }
 
 function firmarToken(usuario) {
-  return jwt.sign({ sub: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign({ sub: usuario.id, email: usuario.email, rol: usuario.rol }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 function verificarToken(token) {
