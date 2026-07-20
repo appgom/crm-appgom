@@ -85,9 +85,11 @@ async function findPendientesConDetalle() {
       c.numero_contrato,
       c.estatus AS estatus_contrato,
       c.modalidad_facturacion,
+      c.periodicidad,
       cs.nombre AS tipo_servicio,
       cl.id AS cliente_id,
       cl.nombre AS cliente_nombre,
+      cl.empresa AS cliente_empresa,
       cl.email AS cliente_email,
       COALESCE((SELECT SUM(monto) FROM pago_aplicaciones WHERE cargo_id = cg.id), 0) AS total_pagado
     FROM cargos cg

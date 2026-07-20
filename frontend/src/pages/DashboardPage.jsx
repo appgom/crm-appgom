@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
-import { estadoVencimiento, diasHasta } from '../utils/vencimiento';
+import { estadoVencimiento } from '../utils/vencimiento';
 import { api } from '../api/client';
 
 function formatMoney(n) {
@@ -25,7 +25,7 @@ export default function DashboardPage() {
 
   const totalPorCobrar = vencimientos.reduce((sum, v) => sum + v.saldo_pendiente, 0);
   const clientesVencidos = new Set(vencimientos.filter((v) => v.vencido).map((v) => v.cliente_id)).size;
-  const en7dias = vencimientos.filter((v) => !v.vencido && diasHasta(v.fecha_vencimiento) <= 7).length;
+  const proximos = vencimientos.filter((v) => !v.vencido && estadoVencimiento(v).urgencia !== 'lejano').length;
 
   return (
     <Layout searchPlaceholder="Buscar clientes o contratos...">
@@ -55,8 +55,8 @@ export default function DashboardPage() {
         <KpiCard
           icon="calendar_today"
           iconClass="bg-secondary-container text-secondary"
-          label="Vencimientos próximos (7 días)"
-          value={loading ? '...' : en7dias}
+          label="Vencimientos próximos"
+          value={loading ? '...' : proximos}
         />
       </div>
 
@@ -77,6 +77,7 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="bg-surface-base border-b border-border-subtle">
                     <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cliente</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Empresa</th>
                     <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Servicio</th>
                     <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
                     <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Vencimiento</th>
@@ -93,6 +94,7 @@ export default function DashboardPage() {
                         className="hover:bg-surface-base transition-colors cursor-pointer"
                       >
                         <td className="px-6 py-4 font-semibold text-text-main">{v.cliente_nombre}</td>
+                        <td className="px-6 py-4 text-text-main">{v.cliente_empresa || '—'}</td>
                         <td className="px-6 py-4 text-text-main">{v.tipo_servicio}</td>
                         <td className="px-6 py-4 text-text-main text-right font-semibold">{formatMoney(v.saldo_pendiente)}</td>
                         <td className="px-6 py-4 text-text-main">
@@ -121,7 +123,10 @@ export default function DashboardPage() {
                     className="w-full text-left px-4 py-4 active:bg-surface-base transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="font-semibold text-text-main">{v.cliente_nombre}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-main truncate">{v.cliente_nombre}</p>
+                        {v.cliente_empresa && <p className="text-xs text-text-muted truncate">{v.cliente_empresa}</p>}
+                      </div>
                       <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-bold ${estado.className}`}>
                         {estado.label}
                       </span>

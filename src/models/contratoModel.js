@@ -25,6 +25,7 @@ async function create({
   periodicidad,
   fecha_inicio,
   fecha_proximo_vencimiento,
+  fecha_limite_pago,
   estatus,
   modalidad_facturacion,
 }) {
@@ -34,8 +35,8 @@ async function create({
 
     const { rows } = await client.query(
       `INSERT INTO contratos
-        (cliente_id, tipo_servicio_id, descripcion, notas_internas, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, estatus, modalidad_facturacion)
-       VALUES ($1, $2, $3, $4, 'CT-' || LPAD(nextval('contrato_numero_seq')::text, 5, '0'), $5, $6, $7, $8, COALESCE($9, 'activo')::estatus_contrato_enum, COALESCE($10, 'recurrente')::modalidad_facturacion_enum)
+        (cliente_id, tipo_servicio_id, descripcion, notas_internas, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, fecha_limite_pago, estatus, modalidad_facturacion)
+       VALUES ($1, $2, $3, $4, 'CT-' || LPAD(nextval('contrato_numero_seq')::text, 5, '0'), $5, $6, $7, $8, $9, COALESCE($10, 'activo')::estatus_contrato_enum, COALESCE($11, 'recurrente')::modalidad_facturacion_enum)
        RETURNING *`,
       [
         cliente_id,
@@ -46,6 +47,7 @@ async function create({
         periodicidad,
         fecha_inicio,
         fecha_proximo_vencimiento,
+        fecha_limite_pago || null,
         estatus,
         modalidad_facturacion,
       ]
@@ -79,6 +81,7 @@ async function update(id, {
   periodicidad,
   fecha_inicio,
   fecha_proximo_vencimiento,
+  fecha_limite_pago,
   estatus,
   modalidad_facturacion,
 }) {
@@ -91,9 +94,10 @@ async function update(id, {
       periodicidad = $5,
       fecha_inicio = $6,
       fecha_proximo_vencimiento = $7,
-      estatus = $8,
-      modalidad_facturacion = $9
-     WHERE id = $10
+      fecha_limite_pago = $8,
+      estatus = $9,
+      modalidad_facturacion = $10
+     WHERE id = $11
      RETURNING *`,
     [
       tipo_servicio_id,
@@ -103,6 +107,7 @@ async function update(id, {
       periodicidad,
       fecha_inicio,
       fecha_proximo_vencimiento,
+      fecha_limite_pago || null,
       estatus,
       modalidad_facturacion,
       id,

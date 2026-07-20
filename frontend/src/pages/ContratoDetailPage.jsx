@@ -141,6 +141,9 @@ export default function ContratoDetailPage() {
             <Field label="Modalidad" value={etiquetaModalidad(contrato.modalidad_facturacion)} />
             <Field label="Fecha inicio" value={new Date(contrato.fecha_inicio).toLocaleDateString('es-MX')} />
             <Field label="Próximo vencimiento" value={new Date(contrato.fecha_proximo_vencimiento).toLocaleDateString('es-MX')} />
+            {contrato.fecha_limite_pago && (
+              <Field label="Fecha límite de pago" value={new Date(contrato.fecha_limite_pago).toLocaleDateString('es-MX')} />
+            )}
             <div>
               <p className="text-text-muted font-label-md text-label-md mb-1 uppercase tracking-wider">Estatus</p>
               <StatusBadge status={contrato.estatus} label={contrato.estatus} />

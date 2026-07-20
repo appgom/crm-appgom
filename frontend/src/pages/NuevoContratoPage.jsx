@@ -23,6 +23,7 @@ export default function NuevoContratoPage() {
     periodicidad: 'mensual',
     fecha_inicio: new Date().toISOString().slice(0, 10),
     fecha_proximo_vencimiento: new Date().toISOString().slice(0, 10),
+    fecha_limite_pago: '',
     modalidad_facturacion: 'recurrente',
     estatus: 'activo',
   });
@@ -49,6 +50,7 @@ export default function NuevoContratoPage() {
             periodicidad: contratoData.periodicidad,
             fecha_inicio: contratoData.fecha_inicio.slice(0, 10),
             fecha_proximo_vencimiento: contratoData.fecha_proximo_vencimiento.slice(0, 10),
+            fecha_limite_pago: contratoData.fecha_limite_pago ? contratoData.fecha_limite_pago.slice(0, 10) : '',
             modalidad_facturacion: contratoData.modalidad_facturacion,
             estatus: contratoData.estatus,
           });
@@ -239,6 +241,20 @@ export default function NuevoContratoPage() {
                   Normalmente avanza solo al liquidar un cargo. Ajústalo aquí solo si necesitas corregirlo manualmente.
                 </p>
               )}
+            </div>
+            <div>
+              <label className="block font-label-md text-label-md text-secondary mb-2">
+                Fecha límite de pago (opcional)
+              </label>
+              <input
+                type="date"
+                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
+                value={form.fecha_limite_pago}
+                onChange={(e) => setForm({ ...form, fecha_limite_pago: e.target.value })}
+              />
+              <p className="text-xs text-text-muted mt-1">
+                Fecha tope para pagar antes de un recargo o corte, si es distinta a la fecha de vencimiento del contrato.
+              </p>
             </div>
             {esEdicion && (
               <div>
