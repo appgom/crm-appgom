@@ -8,6 +8,12 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
   },
+  // Evita que un problema de red deje el proceso colgado indefinidamente
+  // (importante para el job de recordatorios, que corre por cron y debe
+  // terminar solo sin dejar procesos atorados).
+  connectionTimeout: 10_000,
+  greetingTimeout: 10_000,
+  socketTimeout: 15_000,
 });
 
 async function enviarCorreo({ to, subject, html }) {
