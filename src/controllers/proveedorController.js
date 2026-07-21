@@ -1,5 +1,6 @@
 const proveedorModel = require('../models/proveedorModel');
 const cargoProveedorModel = require('../models/cargoProveedorModel');
+const { diasDesdeHoy } = require('../utils/diasCalendario');
 
 async function list(req, res) {
   const proveedores = await proveedorModel.findAll();
@@ -81,10 +82,7 @@ async function saldo(req, res) {
   const totalPagado = await cargoProveedorModel.sumPagosByCargoId(cargoPendiente.id);
   const saldoPendiente = Math.max(Number(cargoPendiente.monto) - totalPagado, 0);
 
-  const hoy = new Date();
-  const vencimiento = new Date(cargoPendiente.fecha_vencimiento);
-  const msPorDia = 1000 * 60 * 60 * 24;
-  const diasAtraso = Math.max(Math.floor((hoy - vencimiento) / msPorDia), 0);
+  const diasAtraso = Math.max(-diasDesdeHoy(cargoPendiente.fecha_vencimiento), 0);
 
   res.json({
     proveedor_id: proveedor.id,

@@ -1,14 +1,13 @@
 const cargoModel = require('../models/cargoModel');
+const { diasDesdeHoy } = require('../utils/diasCalendario');
 
 async function list(req, res) {
   const cargos = await cargoModel.findPendientesConDetalle();
-  const hoy = new Date();
-  const msPorDia = 1000 * 60 * 60 * 24;
 
   const resultado = cargos.map((c) => {
     const totalPagado = Number(c.total_pagado);
     const saldoPendiente = Math.max(Number(c.monto) - totalPagado, 0);
-    const diasAtraso = Math.max(Math.floor((hoy - new Date(c.fecha_vencimiento)) / msPorDia), 0);
+    const diasAtraso = Math.max(-diasDesdeHoy(c.fecha_vencimiento), 0);
 
     return {
       cargo_id: c.cargo_id,

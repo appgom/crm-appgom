@@ -1,18 +1,11 @@
 const cargoModel = require('../models/cargoModel');
 const notificacionLogModel = require('../models/notificacionLogModel');
 const { enviarCorreo } = require('../config/mailer');
+const { diasDesdeHoy } = require('../utils/diasCalendario');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
-function inicioDelDiaUTC(fecha) {
-  const d = new Date(fecha);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-}
-
-function diasHasta(fecha) {
-  const ms = inicioDelDiaUTC(fecha) - inicioDelDiaUTC(new Date());
-  return Math.round(ms / (1000 * 60 * 60 * 24));
-}
+const diasHasta = diasDesdeHoy;
 
 // Contratos anuales avisan con más anticipación (30/15/7 dias); el resto
 // (mensual, trimestral, quincenal, semanal y modalidades de pago unico)
