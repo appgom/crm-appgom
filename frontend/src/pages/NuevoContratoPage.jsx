@@ -26,6 +26,7 @@ export default function NuevoContratoPage() {
     fecha_proximo_vencimiento: new Date().toISOString().slice(0, 10),
     dias_gracia_pago: '',
     modalidad_facturacion: 'recurrente',
+    metodo_cobro: 'transferencia',
     estatus: 'activo',
   });
   const [montoOriginal, setMontoOriginal] = useState(null);
@@ -55,6 +56,7 @@ export default function NuevoContratoPage() {
             fecha_proximo_vencimiento: contratoData.fecha_proximo_vencimiento.slice(0, 10),
             dias_gracia_pago: contratoData.dias_gracia_pago ?? '',
             modalidad_facturacion: contratoData.modalidad_facturacion,
+            metodo_cobro: contratoData.metodo_cobro || 'transferencia',
             estatus: contratoData.estatus,
           });
           setMontoOriginal(Number(contratoData.monto));
@@ -230,6 +232,20 @@ export default function NuevoContratoPage() {
                 <option value="por_ticket">Por ticket</option>
                 <option value="proyecto_unico">Proyecto único</option>
               </select>
+            </div>
+            <div>
+              <label className="block font-label-md text-label-md text-secondary mb-2">Método de cobro</label>
+              <select
+                className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
+                value={form.metodo_cobro}
+                onChange={(e) => setForm({ ...form, metodo_cobro: e.target.value })}
+              >
+                <option value="transferencia">Transferencia</option>
+                <option value="stripe">Tarjeta (Stripe)</option>
+              </select>
+              <p className="text-xs text-text-muted mt-1">
+                Determina qué pantalla ve el cliente en su portal para pagar este contrato.
+              </p>
             </div>
             {form.modalidad_facturacion === 'recurrente' && (
               <div>

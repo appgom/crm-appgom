@@ -7,6 +7,7 @@ import BadgeTipoPago from '../components/BadgeTipoPago';
 import { api, BASE_URL } from '../api/client';
 import useOrdenamiento from '../hooks/useOrdenamiento';
 import ThOrdenable from '../components/ThOrdenable';
+import { useAuth } from '../context/AuthContext';
 
 const TH_CLASS = 'px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider';
 
@@ -17,7 +18,10 @@ function formatMoney(n) {
 export default function ClienteDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [cliente, setCliente] = useState(null);
+  const [habilitandoPortal, setHabilitandoPortal] = useState(false);
+  const [portalMensaje, setPortalMensaje] = useState(null);
   const [contratos, setContratos] = useState([]);
   const [servicios, setServicios] = useState([]);
   const [pagos, setPagos] = useState([]);
@@ -91,6 +95,20 @@ export default function ClienteDetailPage() {
     }
   }
 
+  async function habilitarPortal() {
+    setHabilitandoPortal(true);
+    setPortalMensaje(null);
+    try {
+      const res = await api.post(`/clientes/${id}/portal/habilitar`, {});
+      setPortalMensaje({ tipo: 'ok', texto: res.mensaje });
+      cargarDatos();
+    } catch (err) {
+      setPortalMensaje({ tipo: 'error', texto: err.message });
+    } finally {
+      setHabilitandoPortal(false);
+    }
+  }
+
   if (loading) {
     return (
       <Layout>
@@ -147,6 +165,29 @@ export default function ClienteDetailPage() {
             </div>
           </div>
         </div>
+
+        {usuario?.rol === 'admin' && (
+          <div className="pt-6 mt-6 border-t border-border-subtle flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-label-md text-label-md text-text-muted mb-1">Portal de cliente</p>
+              <p className="font-body-md text-body-md text-text-main">
+                {cliente.portal_habilitado ? 'Acceso habilitado' : 'Sin acceso al portal todavía'}
+              </p>
+            </div>
+            <button
+              onClick={habilitarPortal}
+              disabled={habilitandoPortal}
+              className="px-4 py-2 border border-border-subtle text-secondary rounded-lg font-semibold hover:bg-surface-base transition-all disabled:opacity-50"
+            >
+              {habilitandoPortal ? 'Enviando...' : cliente.portal_habilitado ? 'Reenviar acceso' : 'Habilitar acceso al portal'}
+            </button>
+          </div>
+        )}
+        {portalMensaje && (
+          <p className={`text-sm mt-2 ${portalMensaje.tipo === 'ok' ? 'text-status-success' : 'text-status-error'}`}>
+            {portalMensaje.texto}
+          </p>
+        )}
       </div>
 
       <section className="bg-surface-container-lowest border border-border-subtle rounded-xl p-5 md:p-8 mt-6">

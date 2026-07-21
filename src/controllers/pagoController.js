@@ -27,12 +27,21 @@ async function create(req, res) {
     return res.status(400).json({ error: 'fecha, metodo y al menos una aplicación (contrato_id/cargo_id, monto) son requeridos' });
   }
 
+  let clienteIdComun = null;
   for (const aplicacion of aplicaciones) {
     if (!aplicacion.contrato_id || !aplicacion.monto || Number(aplicacion.monto) <= 0) {
       return res.status(400).json({ error: 'Cada aplicación requiere contrato_id y monto mayor a 0' });
     }
     const contrato = await contratoModel.findById(aplicacion.contrato_id);
     if (!contrato) return res.status(404).json({ error: `Contrato ${aplicacion.contrato_id} no encontrado` });
+
+    // Un mismo pago puede repartirse entre varios contratos, pero siempre del
+    // mismo cliente; evita mezclar datos de dos clientes en un solo registro.
+    if (clienteIdComun === null) {
+      clienteIdComun = contrato.cliente_id;
+    } else if (contrato.cliente_id !== clienteIdComun) {
+      return res.status(400).json({ error: 'Todas las aplicaciones de un mismo pago deben pertenecer al mismo cliente' });
+    }
   }
 
   const pago = await pagoModel.create({

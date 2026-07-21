@@ -11,8 +11,33 @@ async function findById(id) {
   return rows[0];
 }
 
+async function findByIdConServicio(id) {
+  const { rows } = await pool.query(
+    `SELECT c.*, cs.nombre AS tipo_servicio
+     FROM contratos c
+     JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
+     WHERE c.id = $1`,
+    [id]
+  );
+  return rows[0];
+}
+
 async function findByClienteId(clienteId) {
   const { rows } = await pool.query('SELECT * FROM contratos WHERE cliente_id = $1 ORDER BY id', [clienteId]);
+  return rows;
+}
+
+// Para el portal de clientes: incluye el nombre del servicio, ya que ahi
+// no hay acceso al catalogo de servicios administrativo.
+async function findByClienteIdConServicio(clienteId) {
+  const { rows } = await pool.query(
+    `SELECT c.*, cs.nombre AS tipo_servicio
+     FROM contratos c
+     JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
+     WHERE c.cliente_id = $1
+     ORDER BY c.id`,
+    [clienteId]
+  );
   return rows;
 }
 
@@ -28,6 +53,7 @@ async function create({
   dias_gracia_pago,
   estatus,
   modalidad_facturacion,
+  metodo_cobro,
 }) {
   const client = await pool.connect();
   try {
@@ -35,8 +61,8 @@ async function create({
 
     const { rows } = await client.query(
       `INSERT INTO contratos
-        (cliente_id, tipo_servicio_id, descripcion, notas_internas, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, dias_gracia_pago, estatus, modalidad_facturacion)
-       VALUES ($1, $2, $3, $4, 'CT-' || LPAD(nextval('contrato_numero_seq')::text, 5, '0'), $5, $6, $7, $8, $9, COALESCE($10, 'activo')::estatus_contrato_enum, COALESCE($11, 'recurrente')::modalidad_facturacion_enum)
+        (cliente_id, tipo_servicio_id, descripcion, notas_internas, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, dias_gracia_pago, estatus, modalidad_facturacion, metodo_cobro)
+       VALUES ($1, $2, $3, $4, 'CT-' || LPAD(nextval('contrato_numero_seq')::text, 5, '0'), $5, $6, $7, $8, $9, COALESCE($10, 'activo')::estatus_contrato_enum, COALESCE($11, 'recurrente')::modalidad_facturacion_enum, COALESCE($12, 'transferencia')::metodo_cobro_enum)
        RETURNING *`,
       [
         cliente_id,
@@ -50,6 +76,7 @@ async function create({
         dias_gracia_pago === '' || dias_gracia_pago == null ? null : Number(dias_gracia_pago),
         estatus,
         modalidad_facturacion,
+        metodo_cobro,
       ]
     );
     const contrato = rows[0];
@@ -84,6 +111,7 @@ async function update(id, {
   dias_gracia_pago,
   estatus,
   modalidad_facturacion,
+  metodo_cobro,
 }) {
   const { rows } = await pool.query(
     `UPDATE contratos SET
@@ -96,8 +124,9 @@ async function update(id, {
       fecha_proximo_vencimiento = $7,
       dias_gracia_pago = $8,
       estatus = $9,
-      modalidad_facturacion = $10
-     WHERE id = $11
+      modalidad_facturacion = $10,
+      metodo_cobro = $11
+     WHERE id = $12
      RETURNING *`,
     [
       tipo_servicio_id,
@@ -110,6 +139,7 @@ async function update(id, {
       dias_gracia_pago === '' || dias_gracia_pago == null ? null : Number(dias_gracia_pago),
       estatus,
       modalidad_facturacion,
+      metodo_cobro,
       id,
     ]
   );
@@ -129,4 +159,14 @@ async function remove(id) {
   return rows[0];
 }
 
-module.exports = { findAll, findById, findByClienteId, create, update, remove, actualizarProximoVencimiento };
+module.exports = {
+  findAll,
+  findById,
+  findByIdConServicio,
+  findByClienteId,
+  findByClienteIdConServicio,
+  create,
+  update,
+  remove,
+  actualizarProximoVencimiento,
+};

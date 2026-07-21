@@ -65,7 +65,11 @@ async function findByClienteId(clienteId) {
         FROM pago_aplicaciones pa2
         JOIN contratos c2 ON c2.id = pa2.contrato_id
         JOIN catalogo_servicios cs2 ON cs2.id = c2.tipo_servicio_id
-        WHERE pa2.pago_id = p.id AND pa2.contrato_id != pa.contrato_id
+        -- Restringido al mismo cliente: este resultado ahora tambien se expone
+        -- al portal (bajo nivel de confianza), y un pago que por error o
+        -- diseño futuro llegara a aplicar a contratos de otro cliente no debe
+        -- filtrar esos datos ajenos.
+        WHERE pa2.pago_id = p.id AND pa2.contrato_id != pa.contrato_id AND c2.cliente_id = c.cliente_id
       ) AS otros_servicios
     FROM pago_aplicaciones pa
     JOIN pagos p ON p.id = pa.pago_id

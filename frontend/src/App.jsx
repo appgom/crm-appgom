@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PortalAuthProvider, usePortalAuth } from './context/PortalAuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ClientesPage from './pages/ClientesPage';
@@ -12,6 +13,12 @@ import ProveedoresPage from './pages/ProveedoresPage';
 import ProveedorDetailPage from './pages/ProveedorDetailPage';
 import ConfiguracionPage from './pages/ConfiguracionPage';
 import PerfilPage from './pages/PerfilPage';
+import ReportesPagoPage from './pages/ReportesPagoPage';
+import PortalLoginPage from './pages/portal/PortalLoginPage';
+import PortalSolicitarResetPage from './pages/portal/PortalSolicitarResetPage';
+import PortalRestablecerPage from './pages/portal/PortalRestablecerPage';
+import PortalDashboardPage from './pages/portal/PortalDashboardPage';
+import PortalContratoDetailPage from './pages/portal/PortalContratoDetailPage';
 
 function RequireAuth({ children }) {
   const { usuario, loading } = useAuth();
@@ -43,6 +50,7 @@ function AppRoutes() {
       <Route path="/contratos/:id/editar" element={<RequireAuth><NuevoContratoPage /></RequireAuth>} />
       <Route path="/contratos/:id" element={<RequireAuth><ContratoDetailPage /></RequireAuth>} />
       <Route path="/vencimientos" element={<RequireAuth><VencimientosPage /></RequireAuth>} />
+      <Route path="/reportes-pago" element={<RequireAuth><ReportesPagoPage /></RequireAuth>} />
       <Route path="/suscripciones" element={<RequireAuth><ProveedoresPage /></RequireAuth>} />
       <Route path="/suscripciones/:id" element={<RequireAuth><ProveedorDetailPage /></RequireAuth>} />
       <Route path="/configuracion" element={<RequireAuth><ConfiguracionPage /></RequireAuth>} />
@@ -51,12 +59,57 @@ function AppRoutes() {
   );
 }
 
+function RequirePortalAuth({ children }) {
+  const { cliente, loading } = usePortalAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div className="min-h-screen bg-surface-base" />;
+  }
+  if (!cliente) {
+    return <Navigate to="/portal/login" state={{ from: location.pathname }} replace />;
+  }
+  return children;
+}
+
+function PortalRoutes() {
+  const { cliente, setCliente } = usePortalAuth();
+
+  return (
+    <Routes>
+      <Route
+        path="login"
+        element={cliente ? <Navigate to="/portal" replace /> : <PortalLoginPage onLogin={setCliente} />}
+      />
+      <Route path="solicitar-reset" element={<PortalSolicitarResetPage />} />
+      <Route path="restablecer" element={<PortalRestablecerPage />} />
+      <Route path="" element={<RequirePortalAuth><PortalDashboardPage /></RequirePortalAuth>} />
+      <Route path="contratos/:id" element={<RequirePortalAuth><PortalContratoDetailPage /></RequirePortalAuth>} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <Routes>
+        <Route
+          path="/portal/*"
+          element={
+            <PortalAuthProvider>
+              <PortalRoutes />
+            </PortalAuthProvider>
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

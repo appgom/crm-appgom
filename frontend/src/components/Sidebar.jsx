@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/clientes', label: 'Clientes', icon: 'group' },
   { to: '/contratos', label: 'Contratos', icon: 'description' },
   { to: '/vencimientos', label: 'Cuentas por cobrar', icon: 'event_busy' },
+  { to: '/reportes-pago', label: 'Reportes de pago', icon: 'receipt_long' },
   { to: '/suscripciones', label: 'Suscripciones', icon: 'subscriptions' },
 ];
 

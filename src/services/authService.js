@@ -22,7 +22,13 @@ function firmarToken(usuario) {
 }
 
 function verificarToken(token) {
-  return jwt.verify(token, JWT_SECRET);
+  const payload = jwt.verify(token, JWT_SECRET);
+  // Los tokens del portal de clientes llevan tipo:'portal' y usan un secreto
+  // separado (ver portalAuthService.js); si alguna vez PORTAL_JWT_SECRET
+  // coincidiera por error con este, este chequeo evita que un token de
+  // cliente se acepte como sesion de administrador.
+  if (payload.tipo) throw new Error('Token no es de administrador');
+  return payload;
 }
 
 const COOKIE_NAME = 'crm_session';

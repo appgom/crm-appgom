@@ -1,6 +1,6 @@
 const contratoModel = require('../models/contratoModel');
 const cargoModel = require('../models/cargoModel');
-const { diasDesdeHoy } = require('../utils/diasCalendario');
+const { calcularSaldo } = require('../services/contratoSaldoService');
 
 async function list(req, res) {
   const contratos = await contratoModel.findAll();
@@ -26,6 +26,7 @@ async function create(req, res) {
     dias_gracia_pago,
     estatus,
     modalidad_facturacion,
+    metodo_cobro,
   } = req.body;
 
   if (!cliente_id || !tipo_servicio_id || !monto || !periodicidad || !fecha_inicio || !fecha_proximo_vencimiento) {
@@ -46,6 +47,7 @@ async function create(req, res) {
     dias_gracia_pago,
     estatus,
     modalidad_facturacion,
+    metodo_cobro,
   });
   res.status(201).json(contrato);
 }
@@ -66,6 +68,7 @@ async function update(req, res) {
     dias_gracia_pago: body.dias_gracia_pago ?? existente.dias_gracia_pago,
     estatus: body.estatus ?? existente.estatus,
     modalidad_facturacion: body.modalidad_facturacion ?? existente.modalidad_facturacion,
+    metodo_cobro: body.metodo_cobro ?? existente.metodo_cobro,
   });
 
   // Si se corrigio manualmente la fecha/monto del contrato, el cargo pendiente
@@ -105,37 +108,7 @@ async function remove(req, res) {
 async function saldo(req, res) {
   const contrato = await contratoModel.findById(req.params.id);
   if (!contrato) return res.status(404).json({ error: 'Contrato no encontrado' });
-
-  const cargoPendiente = await cargoModel.findPendienteActual(contrato.id);
-
-  if (!cargoPendiente) {
-    return res.json({
-      contrato_id: contrato.id,
-      saldo_pendiente: 0,
-      cargo_pendiente: null,
-      dias_atraso: 0,
-      al_corriente: true,
-    });
-  }
-
-  const totalPagado = await cargoModel.sumPagosByCargoId(cargoPendiente.id);
-  const saldoPendiente = Math.max(Number(cargoPendiente.monto) - totalPagado, 0);
-
-  const diasAtraso = Math.max(-diasDesdeHoy(cargoPendiente.fecha_vencimiento), 0);
-
-  res.json({
-    contrato_id: contrato.id,
-    cargo_pendiente: {
-      id: cargoPendiente.id,
-      fecha_vencimiento: cargoPendiente.fecha_vencimiento,
-      monto: Number(cargoPendiente.monto),
-      total_pagado: totalPagado,
-      estatus: cargoPendiente.estatus,
-    },
-    saldo_pendiente: saldoPendiente,
-    dias_atraso: diasAtraso,
-    al_corriente: diasAtraso === 0 && saldoPendiente === 0,
-  });
+  res.json(await calcularSaldo(contrato));
 }
 
 async function cargos(req, res) {

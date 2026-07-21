@@ -18,5 +18,6 @@ router.get('/:id/csf', asyncHandler(clienteController.descargarCsf));
 
 router.get('/:id/pagos', asyncHandler(pagoController.listByCliente));
 router.get('/:id/cargos-pendientes', asyncHandler(clienteController.cargosPendientes));
+router.post('/:id/portal/habilitar', requireAdmin, asyncHandler(clienteController.habilitarPortal));
 
 module.exports = router;

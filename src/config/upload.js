@@ -5,9 +5,11 @@ const fs = require('fs');
 const CSF_DIR = path.join(__dirname, '..', '..', 'uploads', 'csf');
 const COMPROBANTES_DIR = path.join(__dirname, '..', '..', 'uploads', 'comprobantes');
 const COMPROBANTES_PROVEEDOR_DIR = path.join(__dirname, '..', '..', 'uploads', 'comprobantes-proveedores');
+const REPORTES_PAGO_DIR = path.join(__dirname, '..', '..', 'uploads', 'reportes-pago');
 fs.mkdirSync(CSF_DIR, { recursive: true });
 fs.mkdirSync(COMPROBANTES_DIR, { recursive: true });
 fs.mkdirSync(COMPROBANTES_PROVEEDOR_DIR, { recursive: true });
+fs.mkdirSync(REPORTES_PAGO_DIR, { recursive: true });
 
 const ARCHIVOS_PERMITIDOS = ['application/pdf', 'image/png', 'image/jpeg'];
 
@@ -54,11 +56,25 @@ const uploadComprobanteProveedor = multer({
   fileFilter: filtroArchivo,
 });
 
+const uploadReportePago = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, REPORTES_PAGO_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `reporte-${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: filtroArchivo,
+});
+
 module.exports = {
   uploadCsf,
   uploadComprobante,
   uploadComprobanteProveedor,
+  uploadReportePago,
   CSF_DIR,
   COMPROBANTES_DIR,
   COMPROBANTES_PROVEEDOR_DIR,
+  REPORTES_PAGO_DIR,
 };

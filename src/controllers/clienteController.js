@@ -3,6 +3,10 @@ const path = require('path');
 const clienteModel = require('../models/clienteModel');
 const cargoModel = require('../models/cargoModel');
 const { CSF_DIR } = require('../config/upload');
+const { hashPassword, generarPasswordTemporal } = require('../services/portalAuthService');
+const { enviarCorreo } = require('../config/mailer');
+
+const PORTAL_URL = process.env.PORTAL_URL || '';
 
 async function list(req, res) {
   const clientes = await clienteModel.findAll();
@@ -77,4 +81,36 @@ async function cargosPendientes(req, res) {
   res.json(cargos);
 }
 
-module.exports = { list, getOne, create, update, remove, subirCsf, descargarCsf, cargosPendientes };
+async function habilitarPortal(req, res) {
+  const cliente = await clienteModel.findById(req.params.id);
+  if (!cliente) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+  const passwordTemporal = generarPasswordTemporal();
+  const hash = await hashPassword(passwordTemporal);
+  await clienteModel.habilitarPortal(cliente.id, hash);
+
+  const url = `${PORTAL_URL}/portal`;
+  let correoEnviado = true;
+  try {
+    await enviarCorreo({
+      to: cliente.email,
+      subject: 'Acceso a tu portal de cliente — Appgom',
+      html: `<p>Hola ${cliente.nombre},</p>
+        <p>Ya puedes ingresar a tu portal de cliente en <a href="${url}">${url}</a> con estos datos:</p>
+        <p>Correo: ${cliente.email}<br/>Contraseña temporal: <strong>${passwordTemporal}</strong></p>
+        <p>Te recomendamos cambiarla después de tu primer ingreso.</p>`,
+    });
+  } catch {
+    correoEnviado = false;
+  }
+
+  // El acceso ya quedo habilitado en la base aunque el correo falle; si no se
+  // pudo enviar, se devuelve la contraseña para que el admin la comparta el mismo.
+  res.json({
+    mensaje: correoEnviado
+      ? 'Acceso al portal habilitado. Se envió la contraseña temporal al correo del cliente.'
+      : `Acceso habilitado, pero no se pudo enviar el correo. Comparte tú la contraseña temporal: ${passwordTemporal}`,
+  });
+}
+
+module.exports = { list, getOne, create, update, remove, subirCsf, descargarCsf, cargosPendientes, habilitarPortal };

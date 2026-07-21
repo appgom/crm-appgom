@@ -15,7 +15,11 @@ const vencimientoRoutes = require('./routes/vencimientoRoutes');
 const proveedorRoutes = require('./routes/proveedorRoutes');
 const pagoProveedorRoutes = require('./routes/pagoProveedorRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
+const portalAuthRoutes = require('./routes/portalAuthRoutes');
+const portalRoutes = require('./routes/portalRoutes');
+const reportePagoRoutes = require('./routes/reportePagoRoutes');
 const requireAuth = require('./middleware/requireAuth');
+const requirePortalAuth = require('./middleware/requirePortalAuth');
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -34,6 +38,10 @@ app.use('/api/vencimientos', requireAuth, vencimientoRoutes);
 app.use('/api/proveedores', requireAuth, proveedorRoutes);
 app.use('/api/pagos-proveedores', requireAuth, pagoProveedorRoutes);
 app.use('/api/usuarios', requireAuth, usuarioRoutes);
+app.use('/api/reportes-pago', requireAuth, reportePagoRoutes);
+
+app.use('/api/portal/auth', portalAuthRoutes);
+app.use('/api/portal', requirePortalAuth, portalRoutes);
 
 // En Render (y en cualquier deploy que construya el frontend), el mismo
 // servidor Express sirve el build de React. En local, frontend/dist no
