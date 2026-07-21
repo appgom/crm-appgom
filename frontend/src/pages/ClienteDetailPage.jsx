@@ -5,6 +5,10 @@ import StatusBadge from '../components/StatusBadge';
 import { ClienteFormModal } from './ClientesPage';
 import BadgeTipoPago from '../components/BadgeTipoPago';
 import { api, BASE_URL } from '../api/client';
+import useOrdenamiento from '../hooks/useOrdenamiento';
+import ThOrdenable from '../components/ThOrdenable';
+
+const TH_CLASS = 'px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider';
 
 function formatMoney(n) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -50,6 +54,24 @@ export default function ClienteDetailPage() {
   function nombreServicio(tipoServicioId) {
     return servicios.find((s) => s.id === tipoServicioId)?.nombre || '—';
   }
+
+  const {
+    listaOrdenada: contratosOrdenados,
+    ordenKey: ordenKeyContratos,
+    ordenDireccion: ordenDireccionContratos,
+    ordenarPorColumna: ordenarContratosPorColumna,
+  } = useOrdenamiento(contratos, {
+    getValor: (item, key) => (key === 'servicio' ? nombreServicio(item.tipo_servicio_id) : item[key]),
+  });
+
+  const {
+    listaOrdenada: pagosOrdenados,
+    ordenKey: ordenKeyPagos,
+    ordenDireccion: ordenDireccionPagos,
+    ordenarPorColumna: ordenarPagosPorColumna,
+  } = useOrdenamiento(pagos, {
+    getValor: (item, key) => (key === 'monto' ? Number(item.monto_aplicado) : item[key]),
+  });
 
   async function handleCsfChange(e) {
     const file = e.target.files[0];
@@ -198,15 +220,15 @@ export default function ClienteDetailPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface-base">
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Servicio</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Monto</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Periodicidad</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Próximo vencimiento</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Estatus</th>
+                    <ThOrdenable sortKey="servicio" ordenKey={ordenKeyContratos} ordenDireccion={ordenDireccionContratos} onSort={ordenarContratosPorColumna} className={TH_CLASS}>Servicio</ThOrdenable>
+                    <ThOrdenable sortKey="monto" ordenKey={ordenKeyContratos} ordenDireccion={ordenDireccionContratos} onSort={ordenarContratosPorColumna} className={TH_CLASS}>Monto</ThOrdenable>
+                    <ThOrdenable sortKey="periodicidad" ordenKey={ordenKeyContratos} ordenDireccion={ordenDireccionContratos} onSort={ordenarContratosPorColumna} className={TH_CLASS}>Periodicidad</ThOrdenable>
+                    <ThOrdenable sortKey="fecha_proximo_vencimiento" ordenKey={ordenKeyContratos} ordenDireccion={ordenDireccionContratos} onSort={ordenarContratosPorColumna} className={TH_CLASS}>Próximo vencimiento</ThOrdenable>
+                    <ThOrdenable sortKey="estatus" ordenKey={ordenKeyContratos} ordenDireccion={ordenDireccionContratos} onSort={ordenarContratosPorColumna} className={TH_CLASS}>Estatus</ThOrdenable>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
-                  {contratos.map((c) => (
+                  {contratosOrdenados.map((c) => (
                     <tr key={c.id} className="hover:bg-surface-base transition-colors">
                       <td className="px-8 py-5">
                         <Link to={`/contratos/${c.id}`} className="font-title-lg text-title-lg text-action-blue hover:underline">
@@ -233,7 +255,7 @@ export default function ClienteDetailPage() {
 
             {/* Tarjetas — movil */}
             <div className="md:hidden divide-y divide-border-subtle">
-              {contratos.map((c) => (
+              {contratosOrdenados.map((c) => (
                 <Link key={c.id} to={`/contratos/${c.id}`} className="block p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <span className="font-semibold text-action-blue">{nombreServicio(c.tipo_servicio_id)}</span>
@@ -266,17 +288,17 @@ export default function ClienteDetailPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface-base">
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Fecha</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Servicio</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider text-right">Monto</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Tipo</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Método</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Referencia</th>
-                    <th className="px-8 py-4 font-label-md text-label-md text-text-muted uppercase tracking-wider">Comprobante</th>
+                    <ThOrdenable sortKey="fecha" ordenKey={ordenKeyPagos} ordenDireccion={ordenDireccionPagos} onSort={ordenarPagosPorColumna} className={TH_CLASS}>Fecha</ThOrdenable>
+                    <ThOrdenable sortKey="tipo_servicio" ordenKey={ordenKeyPagos} ordenDireccion={ordenDireccionPagos} onSort={ordenarPagosPorColumna} className={TH_CLASS}>Servicio</ThOrdenable>
+                    <ThOrdenable sortKey="monto" ordenKey={ordenKeyPagos} ordenDireccion={ordenDireccionPagos} onSort={ordenarPagosPorColumna} align="right" className={TH_CLASS}>Monto</ThOrdenable>
+                    <ThOrdenable sortKey="tipo_aplicacion" ordenKey={ordenKeyPagos} ordenDireccion={ordenDireccionPagos} onSort={ordenarPagosPorColumna} className={TH_CLASS}>Tipo</ThOrdenable>
+                    <ThOrdenable sortKey="metodo" ordenKey={ordenKeyPagos} ordenDireccion={ordenDireccionPagos} onSort={ordenarPagosPorColumna} className={TH_CLASS}>Método</ThOrdenable>
+                    <ThOrdenable sortKey="referencia" ordenKey={ordenKeyPagos} ordenDireccion={ordenDireccionPagos} onSort={ordenarPagosPorColumna} className={TH_CLASS}>Referencia</ThOrdenable>
+                    <th className={TH_CLASS}>Comprobante</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
-                  {pagos.map((p) => (
+                  {pagosOrdenados.map((p) => (
                     <tr key={`${p.pago_id}-${p.contrato_id}`} className="hover:bg-surface-base transition-colors">
                       <td className="px-8 py-4 text-text-main">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
                       <td className="px-8 py-4 text-text-main">
@@ -311,7 +333,7 @@ export default function ClienteDetailPage() {
 
             {/* Tarjetas — movil */}
             <div className="md:hidden divide-y divide-border-subtle">
-              {pagos.map((p) => (
+              {pagosOrdenados.map((p) => (
                 <div key={`${p.pago_id}-${p.contrato_id}`} className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="min-w-0">

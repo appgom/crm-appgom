@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
@@ -6,6 +6,8 @@ import Pagination from '../components/Pagination';
 import { ConfirmDialog } from './ClientesPage';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import useOrdenamiento from '../hooks/useOrdenamiento';
+import ThOrdenable from '../components/ThOrdenable';
 
 const PAGE_SIZE = 10;
 
@@ -24,6 +26,7 @@ export default function ProveedoresPage() {
   const [eliminando, setEliminando] = useState(null);
   const [expandidoId, setExpandidoId] = useState(null);
   const [saldos, setSaldos] = useState({});
+  const [busqueda, setBusqueda] = useState('');
 
   function cargarDatos() {
     setLoading(true);
@@ -40,9 +43,19 @@ export default function ProveedoresPage() {
     cargarDatos();
   }, []);
 
-  const totalPages = Math.max(Math.ceil(proveedores.length / PAGE_SIZE), 1);
+  const filtrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return proveedores;
+    return proveedores.filter(
+      (p) => p.nombre.toLowerCase().includes(q) || (p.servicio || '').toLowerCase().includes(q)
+    );
+  }, [proveedores, busqueda]);
+
+  const { listaOrdenada, ordenKey, ordenDireccion, ordenarPorColumna } = useOrdenamiento(filtrados);
+
+  const totalPages = Math.max(Math.ceil(listaOrdenada.length / PAGE_SIZE), 1);
   const paginaActual = Math.min(page, totalPages);
-  const proveedoresPagina = proveedores.slice((paginaActual - 1) * PAGE_SIZE, paginaActual * PAGE_SIZE);
+  const proveedoresPagina = listaOrdenada.slice((paginaActual - 1) * PAGE_SIZE, paginaActual * PAGE_SIZE);
 
   async function toggleExpandir(proveedor) {
     const nuevoId = expandidoId === proveedor.id ? null : proveedor.id;
@@ -69,7 +82,7 @@ export default function ProveedoresPage() {
   }
 
   return (
-    <Layout searchPlaceholder="Buscar suscripciones...">
+    <Layout searchPlaceholder="Buscar suscripciones..." onSearch={(v) => setBusqueda(v)}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="font-headline-md text-headline-md text-on-surface">Suscripciones</h2>
@@ -89,7 +102,9 @@ export default function ProveedoresPage() {
       <div className="bg-surface-card rounded-xl border border-border-subtle shadow-sm overflow-hidden">
         {loading && <p className="px-4 py-6 text-secondary">Cargando...</p>}
         {!loading && proveedoresPagina.length === 0 && (
-          <p className="px-4 py-6 text-secondary">Aún no hay suscripciones registradas.</p>
+          <p className="px-4 py-6 text-secondary">
+            {proveedores.length === 0 ? 'Aún no hay suscripciones registradas.' : 'Sin resultados para tu búsqueda.'}
+          </p>
         )}
 
         {!loading && proveedoresPagina.length > 0 && (
@@ -100,11 +115,11 @@ export default function ProveedoresPage() {
                 <thead className="bg-surface-container-low text-secondary border-b border-border-subtle">
                   <tr>
                     <th className="w-10"></th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Suscripción</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Monto</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Periodicidad</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Próximo pago</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Estatus</th>
+                    <ThOrdenable sortKey="nombre" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Suscripción</ThOrdenable>
+                    <ThOrdenable sortKey="monto" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="right">Monto</ThOrdenable>
+                    <ThOrdenable sortKey="periodicidad" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Periodicidad</ThOrdenable>
+                    <ThOrdenable sortKey="fecha_proximo_vencimiento" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Próximo pago</ThOrdenable>
+                    <ThOrdenable sortKey="estatus" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Estatus</ThOrdenable>
                     <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -290,7 +305,7 @@ export default function ProveedoresPage() {
         <Pagination
           page={paginaActual}
           totalPages={totalPages}
-          totalItems={proveedores.length}
+          totalItems={listaOrdenada.length}
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
           itemLabel="proveedores"

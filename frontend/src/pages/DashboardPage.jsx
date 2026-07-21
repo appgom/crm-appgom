@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
 import { estadoVencimiento } from '../utils/vencimiento';
 import { api } from '../api/client';
+import useOrdenamiento from '../hooks/useOrdenamiento';
+import ThOrdenable from '../components/ThOrdenable';
+
+const TH_CLASS = 'px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider';
 
 function formatMoney(n) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -14,6 +18,7 @@ export default function DashboardPage() {
   const [vencimientos, setVencimientos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
     api
@@ -23,12 +28,42 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const filtrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return vencimientos;
+    return vencimientos.filter(
+      (v) =>
+        v.cliente_nombre.toLowerCase().includes(q) ||
+        (v.cliente_empresa || '').toLowerCase().includes(q) ||
+        v.tipo_servicio.toLowerCase().includes(q)
+    );
+  }, [vencimientos, busqueda]);
+
+  function getValorOrden(item, key) {
+    switch (key) {
+      case 'cliente':
+        return item.cliente_nombre;
+      case 'empresa':
+        return item.cliente_empresa || '';
+      case 'servicio':
+        return item.tipo_servicio;
+      case 'atraso':
+        return estadoVencimiento(item).label;
+      default:
+        return item[key];
+    }
+  }
+
+  const { listaOrdenada, ordenKey, ordenDireccion, ordenarPorColumna } = useOrdenamiento(filtrados, {
+    getValor: getValorOrden,
+  });
+
   const totalPorCobrar = vencimientos.reduce((sum, v) => sum + v.saldo_pendiente, 0);
   const clientesVencidos = new Set(vencimientos.filter((v) => v.vencido).map((v) => v.cliente_id)).size;
   const proximos = vencimientos.filter((v) => !v.vencido && estadoVencimiento(v).urgencia !== 'lejano').length;
 
   return (
-    <Layout searchPlaceholder="Buscar clientes o contratos...">
+    <Layout searchPlaceholder="Buscar clientes o contratos..." onSearch={(v) => setBusqueda(v)}>
       <div className="flex items-end justify-between">
         <div>
           <h2 className="font-headline-md text-headline-md text-text-main">Dashboard General</h2>
@@ -68,24 +103,27 @@ export default function DashboardPage() {
         {!loading && vencimientos.length === 0 && (
           <p className="px-6 py-6 text-secondary">No hay vencimientos pendientes.</p>
         )}
+        {!loading && vencimientos.length > 0 && listaOrdenada.length === 0 && (
+          <p className="px-6 py-6 text-secondary">Sin resultados para tu búsqueda.</p>
+        )}
 
-        {!loading && vencimientos.length > 0 && (
+        {!loading && listaOrdenada.length > 0 && (
           <>
             {/* Tabla — desktop/tablet */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface-base border-b border-border-subtle">
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cliente</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Empresa</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Servicio</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Vencimiento</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center">Días de atraso</th>
+                    <ThOrdenable sortKey="cliente" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Cliente</ThOrdenable>
+                    <ThOrdenable sortKey="empresa" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Empresa</ThOrdenable>
+                    <ThOrdenable sortKey="servicio" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Servicio</ThOrdenable>
+                    <ThOrdenable sortKey="saldo_pendiente" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="right" className={TH_CLASS}>Monto</ThOrdenable>
+                    <ThOrdenable sortKey="fecha_vencimiento" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Vencimiento</ThOrdenable>
+                    <ThOrdenable sortKey="atraso" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="center" className={TH_CLASS}>Días de atraso</ThOrdenable>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
-                  {vencimientos.map((v) => {
+                  {listaOrdenada.map((v) => {
                     const estado = estadoVencimiento(v);
                     return (
                       <tr
@@ -114,7 +152,7 @@ export default function DashboardPage() {
 
             {/* Tarjetas — movil */}
             <div className="md:hidden divide-y divide-border-subtle">
-              {vencimientos.map((v) => {
+              {listaOrdenada.map((v) => {
                 const estado = estadoVencimiento(v);
                 return (
                   <button

@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import { estadoVencimiento } from '../utils/vencimiento';
 import { etiquetaModalidad } from '../utils/modalidad';
 import { api } from '../api/client';
+import useOrdenamiento from '../hooks/useOrdenamiento';
+import ThOrdenable from '../components/ThOrdenable';
 
 const PAGE_SIZE = 10;
 
@@ -24,6 +26,7 @@ export default function ContratosPage() {
   const [vencimientosPorContrato, setVencimientosPorContrato] = useState({});
   const [filtroEstatus, setFiltroEstatus] = useState('todos');
   const [filtroServicio, setFiltroServicio] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,23 +66,55 @@ export default function ContratosPage() {
     return clientes.find((c) => c.id === clienteId)?.nombre || '—';
   }
 
+  function empresaCliente(clienteId) {
+    return clientes.find((c) => c.id === clienteId)?.empresa || '';
+  }
+
   function nombreServicio(tipoServicioId) {
     return servicios.find((s) => s.id === tipoServicioId)?.nombre || '—';
   }
 
-  const filtrados = useMemo(
-    () =>
-      contratos.filter((c) => {
-        if (filtroEstatus !== 'todos' && c.estatus !== filtroEstatus) return false;
-        if (filtroServicio !== 'todos' && c.tipo_servicio_id !== Number(filtroServicio)) return false;
-        return true;
-      }),
-    [contratos, filtroEstatus, filtroServicio]
-  );
+  const filtrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return contratos.filter((c) => {
+      if (filtroEstatus !== 'todos' && c.estatus !== filtroEstatus) return false;
+      if (filtroServicio !== 'todos' && c.tipo_servicio_id !== Number(filtroServicio)) return false;
+      if (q) {
+        const coincide =
+          nombreCliente(c.cliente_id).toLowerCase().includes(q) ||
+          empresaCliente(c.cliente_id).toLowerCase().includes(q);
+        if (!coincide) return false;
+      }
+      return true;
+    });
+  }, [contratos, clientes, filtroEstatus, filtroServicio, busqueda]);
 
-  const totalPages = Math.max(Math.ceil(filtrados.length / PAGE_SIZE), 1);
+  function getValorOrden(item, key) {
+    switch (key) {
+      case 'cliente':
+        return nombreCliente(item.cliente_id);
+      case 'empresa':
+        return empresaCliente(item.cliente_id);
+      case 'servicio':
+        return nombreServicio(item.tipo_servicio_id);
+      case 'monto':
+        return Number(item.monto);
+      case 'periodicidad':
+        return item.modalidad_facturacion === 'recurrente' ? item.periodicidad : '';
+      case 'cobro':
+        return badgeCobro(item).label;
+      default:
+        return item[key];
+    }
+  }
+
+  const { listaOrdenada, ordenKey, ordenDireccion, ordenarPorColumna } = useOrdenamiento(filtrados, {
+    getValor: getValorOrden,
+  });
+
+  const totalPages = Math.max(Math.ceil(listaOrdenada.length / PAGE_SIZE), 1);
   const paginaActual = Math.min(page, totalPages);
-  const contratosPagina = filtrados.slice((paginaActual - 1) * PAGE_SIZE, paginaActual * PAGE_SIZE);
+  const contratosPagina = listaOrdenada.slice((paginaActual - 1) * PAGE_SIZE, paginaActual * PAGE_SIZE);
 
   async function toggleExpandir(contrato) {
     const nuevoId = expandidoId === contrato.id ? null : contrato.id;
@@ -106,7 +141,13 @@ export default function ContratosPage() {
   }
 
   return (
-    <Layout searchPlaceholder="Buscar contratos por cliente...">
+    <Layout
+      searchPlaceholder="Buscar contratos por cliente o empresa..."
+      onSearch={(v) => {
+        setBusqueda(v);
+        setPage(1);
+      }}
+    >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="font-headline-md text-headline-md text-on-surface">Gestión de Contratos</h2>
@@ -167,17 +208,18 @@ export default function ContratosPage() {
           <>
             {/* Tabla — desktop/tablet */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse min-w-[950px]">
+              <table className="w-full text-left border-collapse min-w-[1050px]">
                 <thead className="bg-surface-container-low text-secondary border-b border-border-subtle">
                   <tr>
                     <th className="w-10"></th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Cliente</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Servicio</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Monto</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Periodicidad</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Próximo vencimiento</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Estatus</th>
-                    <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider">Cobro</th>
+                    <ThOrdenable sortKey="cliente" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Cliente</ThOrdenable>
+                    <ThOrdenable sortKey="empresa" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Empresa</ThOrdenable>
+                    <ThOrdenable sortKey="servicio" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Servicio</ThOrdenable>
+                    <ThOrdenable sortKey="monto" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="right">Monto</ThOrdenable>
+                    <ThOrdenable sortKey="periodicidad" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Periodicidad</ThOrdenable>
+                    <ThOrdenable sortKey="fecha_proximo_vencimiento" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Próximo vencimiento</ThOrdenable>
+                    <ThOrdenable sortKey="estatus" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Estatus</ThOrdenable>
+                    <ThOrdenable sortKey="cobro" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna}>Cobro</ThOrdenable>
                     <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -200,6 +242,7 @@ export default function ContratosPage() {
                               {nombreCliente(c.cliente_id)}
                             </Link>
                           </td>
+                          <td className="px-4 py-3 text-secondary">{empresaCliente(c.cliente_id) || '—'}</td>
                           <td className="px-4 py-3">
                             <Link to={`/contratos/${c.id}`} className="text-action-blue hover:underline text-[13px] font-medium">
                               {nombreServicio(c.tipo_servicio_id)}
@@ -249,7 +292,7 @@ export default function ContratosPage() {
                         {expandido && (
                           <tr className="bg-surface-base/60">
                             <td></td>
-                            <td colSpan={8} className="px-4 pb-4 pt-1">
+                            <td colSpan={9} className="px-4 pb-4 pt-1">
                               <div className="border border-border-subtle rounded-lg bg-surface-card p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
                                   <p className="font-label-md text-label-md text-text-muted">Número de contrato</p>
@@ -308,6 +351,7 @@ export default function ContratosPage() {
                         </Link>
                         <Link to={`/clientes/${c.cliente_id}`} className="text-sm text-secondary truncate block">
                           {nombreCliente(c.cliente_id)}
+                          {empresaCliente(c.cliente_id) && ` · ${empresaCliente(c.cliente_id)}`}
                         </Link>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">

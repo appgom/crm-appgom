@@ -5,6 +5,10 @@ import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
+import useOrdenamiento from '../hooks/useOrdenamiento';
+import ThOrdenable from '../components/ThOrdenable';
+
+const TH_CLASS = 'px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider';
 
 const PAGE_SIZE = 10;
 
@@ -61,17 +65,35 @@ export default function ClientesPage() {
           const conAdeudo = vencimientos.some((v) => v.cliente_id === cliente.id && v.vencido);
           return { ...cliente, contratosActivos: activos, estatusGeneral: conAdeudo ? 'con_adeudo' : 'al_corriente' };
         })
-        .filter(
-          (c) =>
-            c.nombre.toLowerCase().includes(search.toLowerCase()) ||
-            c.email.toLowerCase().includes(search.toLowerCase())
-        ),
+        .filter((c) => {
+          const q = search.toLowerCase();
+          return (
+            c.nombre.toLowerCase().includes(q) ||
+            c.email.toLowerCase().includes(q) ||
+            (c.empresa || '').toLowerCase().includes(q)
+          );
+        }),
     [clientes, contratos, vencimientos, search]
   );
 
-  const totalPages = Math.max(Math.ceil(clientesConInfo.length / PAGE_SIZE), 1);
+  function getValorOrden(item, key) {
+    switch (key) {
+      case 'empresa':
+        return item.empresa || '';
+      case 'estatus':
+        return item.estatusGeneral;
+      default:
+        return item[key];
+    }
+  }
+
+  const { listaOrdenada, ordenKey, ordenDireccion, ordenarPorColumna } = useOrdenamiento(clientesConInfo, {
+    getValor: getValorOrden,
+  });
+
+  const totalPages = Math.max(Math.ceil(listaOrdenada.length / PAGE_SIZE), 1);
   const paginaActual = Math.min(page, totalPages);
-  const clientesPagina = clientesConInfo.slice((paginaActual - 1) * PAGE_SIZE, paginaActual * PAGE_SIZE);
+  const clientesPagina = listaOrdenada.slice((paginaActual - 1) * PAGE_SIZE, paginaActual * PAGE_SIZE);
 
   async function confirmarEliminar() {
     try {
@@ -86,7 +108,7 @@ export default function ClientesPage() {
 
   return (
     <Layout
-      searchPlaceholder="Buscar clientes por nombre o email..."
+      searchPlaceholder="Buscar clientes por nombre, empresa o email..."
       onSearch={(v) => {
         setSearch(v);
         setPage(1);
@@ -124,13 +146,14 @@ export default function ClientesPage() {
                 <thead>
                   <tr className="bg-surface-base border-b border-border-subtle">
                     <th className="w-10"></th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Nombre</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Teléfono</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center">
+                    <ThOrdenable sortKey="nombre" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Nombre</ThOrdenable>
+                    <ThOrdenable sortKey="empresa" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Empresa</ThOrdenable>
+                    <ThOrdenable sortKey="email" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Email</ThOrdenable>
+                    <ThOrdenable sortKey="telefono" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Teléfono</ThOrdenable>
+                    <ThOrdenable sortKey="contratosActivos" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="center" className={TH_CLASS}>
                       Contratos activos
-                    </th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Estatus</th>
+                    </ThOrdenable>
+                    <ThOrdenable sortKey="estatus" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Estatus</ThOrdenable>
                     <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -156,12 +179,10 @@ export default function ClientesPage() {
                               <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xs shrink-0">
                                 {cliente.nombre.slice(0, 2).toUpperCase()}
                               </div>
-                              <div>
-                                {cliente.empresa && <span className="block text-xs text-secondary">{cliente.empresa}</span>}
-                                <span className="font-bold text-on-surface hover:text-action-blue">{cliente.nombre}</span>
-                              </div>
+                              <span className="font-bold text-on-surface hover:text-action-blue">{cliente.nombre}</span>
                             </Link>
                           </td>
+                          <td className="px-6 py-4 text-secondary">{cliente.empresa || '—'}</td>
                           <td className="px-6 py-4 text-secondary">{cliente.email}</td>
                           <td className="px-6 py-4 text-secondary">{cliente.telefono || '—'}</td>
                           <td className="px-6 py-4 text-center font-mono-label">
@@ -199,7 +220,7 @@ export default function ClientesPage() {
                         {expandido && (
                           <tr className="bg-surface-base/60">
                             <td></td>
-                            <td colSpan={6} className="px-6 pb-4 pt-1">
+                            <td colSpan={7} className="px-6 pb-4 pt-1">
                               {contratosCliente.length === 0 ? (
                                 <p className="text-secondary text-sm py-2">Este cliente no tiene contratos.</p>
                               ) : (

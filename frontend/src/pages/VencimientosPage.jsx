@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
 import RegistrarPagoModal from '../components/RegistrarPagoModal';
 import { estadoVencimiento } from '../utils/vencimiento';
 import { api } from '../api/client';
+import useOrdenamiento from '../hooks/useOrdenamiento';
+import ThOrdenable from '../components/ThOrdenable';
+
+const TH_CLASS = 'px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider';
 
 function formatMoney(n) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -15,6 +19,7 @@ export default function VencimientosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagando, setPagando] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
 
   function cargarDatos() {
     setLoading(true);
@@ -25,11 +30,43 @@ export default function VencimientosPage() {
     cargarDatos();
   }, []);
 
+  const filtrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return vencimientos;
+    return vencimientos.filter(
+      (v) =>
+        v.cliente_nombre.toLowerCase().includes(q) ||
+        (v.cliente_empresa || '').toLowerCase().includes(q)
+    );
+  }, [vencimientos, busqueda]);
+
+  function getValorOrden(item, key) {
+    switch (key) {
+      case 'cliente':
+        return item.cliente_nombre;
+      case 'empresa':
+        return item.cliente_empresa || '';
+      case 'servicio':
+        return item.tipo_servicio;
+      case 'atraso':
+        return estadoVencimiento(item).label;
+      default:
+        return item[key];
+    }
+  }
+
+  const { listaOrdenada, ordenKey, ordenDireccion, ordenarPorColumna } = useOrdenamiento(filtrados, {
+    getValor: getValorOrden,
+  });
+
   const totalPendiente = vencimientos.reduce((sum, v) => sum + v.saldo_pendiente, 0);
   const totalVencidos = vencimientos.filter((v) => v.vencido).length;
 
   return (
-    <Layout searchPlaceholder="Buscar por cliente...">
+    <Layout
+      searchPlaceholder="Buscar por cliente o empresa..."
+      onSearch={(v) => setBusqueda(v)}
+    >
       <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Cuentas por cobrar</h2>
       <p className="text-secondary font-body-sm mb-6">Quién debe y qué vence pronto, ordenado por fecha de vencimiento.</p>
 
@@ -51,26 +88,30 @@ export default function VencimientosPage() {
         {!loading && vencimientos.length === 0 && (
           <p className="px-6 py-6 text-secondary">No hay cargos pendientes. Todos al corriente.</p>
         )}
+        {!loading && vencimientos.length > 0 && listaOrdenada.length === 0 && (
+          <p className="px-6 py-6 text-secondary">Sin resultados para tu búsqueda.</p>
+        )}
 
-        {!loading && vencimientos.length > 0 && (
+        {!loading && listaOrdenada.length > 0 && (
           <>
             {/* Tabla — desktop/tablet */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse min-w-[1100px]">
+              <table className="w-full text-left border-collapse min-w-[1200px]">
                 <thead>
                   <tr className="bg-surface-base border-b border-border-subtle">
-                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cliente</th>
-                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Servicio</th>
-                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto</th>
-                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Pagado</th>
-                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Saldo</th>
-                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider whitespace-nowrap">Vencimiento</th>
-                    <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-center whitespace-nowrap">Días de atraso</th>
+                    <ThOrdenable sortKey="cliente" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Cliente</ThOrdenable>
+                    <ThOrdenable sortKey="empresa" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Empresa</ThOrdenable>
+                    <ThOrdenable sortKey="servicio" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Servicio</ThOrdenable>
+                    <ThOrdenable sortKey="monto" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="right" className={TH_CLASS}>Monto</ThOrdenable>
+                    <ThOrdenable sortKey="total_pagado" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="right" className={TH_CLASS}>Pagado</ThOrdenable>
+                    <ThOrdenable sortKey="saldo_pendiente" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="right" className={TH_CLASS}>Saldo</ThOrdenable>
+                    <ThOrdenable sortKey="fecha_vencimiento" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={`${TH_CLASS} whitespace-nowrap`}>Vencimiento</ThOrdenable>
+                    <ThOrdenable sortKey="atraso" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="center" className={`${TH_CLASS} whitespace-nowrap`}>Días de atraso</ThOrdenable>
                     <th className="px-4 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
-                  {vencimientos.map((v) => {
+                  {listaOrdenada.map((v) => {
                     const estado = estadoVencimiento(v);
                     return (
                       <tr key={v.cargo_id} className="hover:bg-surface-base transition-colors">
@@ -80,6 +121,7 @@ export default function VencimientosPage() {
                           </Link>
                           <span className="text-xs text-text-muted">{v.cliente_email}</span>
                         </td>
+                        <td className="px-4 py-4 text-secondary">{v.cliente_empresa || '—'}</td>
                         <td className="px-4 py-4">
                           <Link to={`/contratos/${v.contrato_id}`} className="text-action-blue hover:underline">
                             {v.tipo_servicio}
@@ -113,7 +155,7 @@ export default function VencimientosPage() {
 
             {/* Tarjetas — movil */}
             <div className="md:hidden divide-y divide-border-subtle">
-              {vencimientos.map((v) => {
+              {listaOrdenada.map((v) => {
                 const estado = estadoVencimiento(v);
                 return (
                 <div key={v.cargo_id} className="p-4">
@@ -122,6 +164,7 @@ export default function VencimientosPage() {
                       <Link to={`/clientes/${v.cliente_id}`} className="font-semibold text-on-surface truncate block">
                         {v.cliente_nombre}
                       </Link>
+                      {v.cliente_empresa && <p className="text-xs text-text-muted truncate">{v.cliente_empresa}</p>}
                       <Link to={`/contratos/${v.contrato_id}`} className="text-action-blue text-sm truncate block">
                         {v.tipo_servicio}
                       </Link>

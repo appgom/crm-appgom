@@ -8,6 +8,10 @@ import { etiquetaModalidad } from '../utils/modalidad';
 import { ConfirmDialog } from './ClientesPage';
 import { useAuth } from '../context/AuthContext';
 import { api, BASE_URL } from '../api/client';
+import useOrdenamiento from '../hooks/useOrdenamiento';
+import ThOrdenable from '../components/ThOrdenable';
+
+const TH_CLASS = 'px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider';
 
 function formatMoney(n) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -53,6 +57,10 @@ export default function ContratoDetailPage() {
   useEffect(() => {
     cargarDatos();
   }, [id]);
+
+  const { listaOrdenada: pagosOrdenados, ordenKey, ordenDireccion, ordenarPorColumna } = useOrdenamiento(pagos, {
+    getValor: (item, key) => (key === 'monto' ? Number(item.monto_aplicado) : item[key]),
+  });
 
   if (loading) {
     return (
@@ -196,16 +204,16 @@ export default function ContratoDetailPage() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-surface-base/50">
                   <tr>
-                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Fecha</th>
-                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">Monto aplicado</th>
-                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Tipo</th>
-                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Método</th>
-                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Referencia</th>
-                    <th className="px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider">Comprobante</th>
+                    <ThOrdenable sortKey="fecha" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Fecha</ThOrdenable>
+                    <ThOrdenable sortKey="monto" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} align="right" className={TH_CLASS}>Monto aplicado</ThOrdenable>
+                    <ThOrdenable sortKey="tipo_aplicacion" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Tipo</ThOrdenable>
+                    <ThOrdenable sortKey="metodo" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Método</ThOrdenable>
+                    <ThOrdenable sortKey="referencia" ordenKey={ordenKey} ordenDireccion={ordenDireccion} onSort={ordenarPorColumna} className={TH_CLASS}>Referencia</ThOrdenable>
+                    <th className={TH_CLASS}>Comprobante</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
-                  {pagos.map((p) => (
+                  {pagosOrdenados.map((p) => (
                     <tr key={p.pago_id} className="hover:bg-surface-base transition-colors">
                       <td className="px-6 py-4 text-on-surface">{new Date(p.fecha).toLocaleDateString('es-MX')}</td>
                       <td className="px-6 py-4 text-right">
@@ -242,7 +250,7 @@ export default function ContratoDetailPage() {
 
             {/* Tarjetas — movil */}
             <div className="md:hidden divide-y divide-border-subtle">
-              {pagos.map((p) => (
+              {pagosOrdenados.map((p) => (
                 <div key={p.pago_id} className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="text-sm text-text-muted">{new Date(p.fecha).toLocaleDateString('es-MX')}</span>
