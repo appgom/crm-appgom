@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ClienteBuscador from '../components/ClienteBuscador';
 import { api } from '../api/client';
+import { sumarDias } from '../utils/fechas';
 
 export default function NuevoContratoPage() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export default function NuevoContratoPage() {
     periodicidad: 'mensual',
     fecha_inicio: new Date().toISOString().slice(0, 10),
     fecha_proximo_vencimiento: new Date().toISOString().slice(0, 10),
-    fecha_limite_pago: '',
+    dias_gracia_pago: '',
     modalidad_facturacion: 'recurrente',
     estatus: 'activo',
   });
@@ -52,7 +53,7 @@ export default function NuevoContratoPage() {
             periodicidad: contratoData.periodicidad,
             fecha_inicio: contratoData.fecha_inicio.slice(0, 10),
             fecha_proximo_vencimiento: contratoData.fecha_proximo_vencimiento.slice(0, 10),
-            fecha_limite_pago: contratoData.fecha_limite_pago ? contratoData.fecha_limite_pago.slice(0, 10) : '',
+            dias_gracia_pago: contratoData.dias_gracia_pago ?? '',
             modalidad_facturacion: contratoData.modalidad_facturacion,
             estatus: contratoData.estatus,
           });
@@ -285,16 +286,21 @@ export default function NuevoContratoPage() {
             </div>
             <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">
-                Fecha límite de pago (opcional)
+                Días de gracia para pago (opcional)
               </label>
               <input
-                type="date"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Ej: 10"
                 className="w-full border border-border-subtle rounded-lg px-4 py-3 text-body-md bg-surface-base"
-                value={form.fecha_limite_pago}
-                onChange={(e) => setForm({ ...form, fecha_limite_pago: e.target.value })}
+                value={form.dias_gracia_pago}
+                onChange={(e) => setForm({ ...form, dias_gracia_pago: e.target.value })}
               />
               <p className="text-xs text-text-muted mt-1">
-                Fecha tope para pagar antes de un recargo o corte, si es distinta a la fecha de vencimiento del contrato.
+                {form.dias_gracia_pago && form.fecha_proximo_vencimiento
+                  ? `Días extra después del vencimiento para pagar sin recargo. Con este valor, la fecha límite sería el ${sumarDias(form.fecha_proximo_vencimiento, form.dias_gracia_pago).toLocaleDateString('es-MX', { timeZone: 'UTC' })}.`
+                  : 'Días extra después del vencimiento para pagar sin recargo (ej: vence el 30, con 10 días de gracia el límite es el día 9 del mes siguiente). Se recalcula solo cada periodo.'}
               </p>
             </div>
             {esEdicion && (

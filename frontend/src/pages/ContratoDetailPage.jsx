@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { api, BASE_URL } from '../api/client';
 import useOrdenamiento from '../hooks/useOrdenamiento';
 import ThOrdenable from '../components/ThOrdenable';
+import { sumarDias } from '../utils/fechas';
 
 const TH_CLASS = 'px-6 py-3 font-label-md text-label-md text-secondary uppercase tracking-wider';
 
@@ -149,8 +150,11 @@ export default function ContratoDetailPage() {
             <Field label="Modalidad" value={etiquetaModalidad(contrato.modalidad_facturacion)} />
             <Field label="Fecha inicio" value={new Date(contrato.fecha_inicio).toLocaleDateString('es-MX')} />
             <Field label="Próximo vencimiento" value={new Date(contrato.fecha_proximo_vencimiento).toLocaleDateString('es-MX')} />
-            {contrato.fecha_limite_pago && (
-              <Field label="Fecha límite de pago" value={new Date(contrato.fecha_limite_pago).toLocaleDateString('es-MX')} />
+            {contrato.dias_gracia_pago != null && (
+              <Field
+                label="Fecha límite de pago"
+                value={`${sumarDias(contrato.fecha_proximo_vencimiento, contrato.dias_gracia_pago).toLocaleDateString('es-MX', { timeZone: 'UTC' })} (${contrato.dias_gracia_pago}d de gracia)`}
+              />
             )}
             <div>
               <p className="text-text-muted font-label-md text-label-md mb-1 uppercase tracking-wider">Estatus</p>

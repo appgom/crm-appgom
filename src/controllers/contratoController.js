@@ -22,7 +22,7 @@ async function create(req, res) {
     periodicidad,
     fecha_inicio,
     fecha_proximo_vencimiento,
-    fecha_limite_pago,
+    dias_gracia_pago,
     estatus,
     modalidad_facturacion,
   } = req.body;
@@ -42,7 +42,7 @@ async function create(req, res) {
     periodicidad,
     fecha_inicio,
     fecha_proximo_vencimiento,
-    fecha_limite_pago,
+    dias_gracia_pago,
     estatus,
     modalidad_facturacion,
   });
@@ -62,7 +62,7 @@ async function update(req, res) {
     periodicidad: body.periodicidad ?? existente.periodicidad,
     fecha_inicio: body.fecha_inicio ?? existente.fecha_inicio,
     fecha_proximo_vencimiento: body.fecha_proximo_vencimiento ?? existente.fecha_proximo_vencimiento,
-    fecha_limite_pago: body.fecha_limite_pago ?? existente.fecha_limite_pago,
+    dias_gracia_pago: body.dias_gracia_pago ?? existente.dias_gracia_pago,
     estatus: body.estatus ?? existente.estatus,
     modalidad_facturacion: body.modalidad_facturacion ?? existente.modalidad_facturacion,
   });

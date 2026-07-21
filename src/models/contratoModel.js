@@ -25,7 +25,7 @@ async function create({
   periodicidad,
   fecha_inicio,
   fecha_proximo_vencimiento,
-  fecha_limite_pago,
+  dias_gracia_pago,
   estatus,
   modalidad_facturacion,
 }) {
@@ -35,7 +35,7 @@ async function create({
 
     const { rows } = await client.query(
       `INSERT INTO contratos
-        (cliente_id, tipo_servicio_id, descripcion, notas_internas, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, fecha_limite_pago, estatus, modalidad_facturacion)
+        (cliente_id, tipo_servicio_id, descripcion, notas_internas, numero_contrato, monto, periodicidad, fecha_inicio, fecha_proximo_vencimiento, dias_gracia_pago, estatus, modalidad_facturacion)
        VALUES ($1, $2, $3, $4, 'CT-' || LPAD(nextval('contrato_numero_seq')::text, 5, '0'), $5, $6, $7, $8, $9, COALESCE($10, 'activo')::estatus_contrato_enum, COALESCE($11, 'recurrente')::modalidad_facturacion_enum)
        RETURNING *`,
       [
@@ -47,7 +47,7 @@ async function create({
         periodicidad,
         fecha_inicio,
         fecha_proximo_vencimiento,
-        fecha_limite_pago || null,
+        dias_gracia_pago === '' || dias_gracia_pago == null ? null : Number(dias_gracia_pago),
         estatus,
         modalidad_facturacion,
       ]
@@ -81,7 +81,7 @@ async function update(id, {
   periodicidad,
   fecha_inicio,
   fecha_proximo_vencimiento,
-  fecha_limite_pago,
+  dias_gracia_pago,
   estatus,
   modalidad_facturacion,
 }) {
@@ -94,7 +94,7 @@ async function update(id, {
       periodicidad = $5,
       fecha_inicio = $6,
       fecha_proximo_vencimiento = $7,
-      fecha_limite_pago = $8,
+      dias_gracia_pago = $8,
       estatus = $9,
       modalidad_facturacion = $10
      WHERE id = $11
@@ -107,7 +107,7 @@ async function update(id, {
       periodicidad,
       fecha_inicio,
       fecha_proximo_vencimiento,
-      fecha_limite_pago || null,
+      dias_gracia_pago === '' || dias_gracia_pago == null ? null : Number(dias_gracia_pago),
       estatus,
       modalidad_facturacion,
       id,
