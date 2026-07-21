@@ -6,10 +6,12 @@ const CSF_DIR = path.join(__dirname, '..', '..', 'uploads', 'csf');
 const COMPROBANTES_DIR = path.join(__dirname, '..', '..', 'uploads', 'comprobantes');
 const COMPROBANTES_PROVEEDOR_DIR = path.join(__dirname, '..', '..', 'uploads', 'comprobantes-proveedores');
 const REPORTES_PAGO_DIR = path.join(__dirname, '..', '..', 'uploads', 'reportes-pago');
+const FACTURAS_DIR = path.join(__dirname, '..', '..', 'uploads', 'facturas');
 fs.mkdirSync(CSF_DIR, { recursive: true });
 fs.mkdirSync(COMPROBANTES_DIR, { recursive: true });
 fs.mkdirSync(COMPROBANTES_PROVEEDOR_DIR, { recursive: true });
 fs.mkdirSync(REPORTES_PAGO_DIR, { recursive: true });
+fs.mkdirSync(FACTURAS_DIR, { recursive: true });
 
 const ARCHIVOS_PERMITIDOS = ['application/pdf', 'image/png', 'image/jpeg'];
 
@@ -68,13 +70,27 @@ const uploadReportePago = multer({
   fileFilter: filtroArchivo,
 });
 
+const uploadFactura = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, FACTURAS_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `factura-${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: filtroArchivo,
+});
+
 module.exports = {
   uploadCsf,
   uploadComprobante,
   uploadComprobanteProveedor,
   uploadReportePago,
+  uploadFactura,
   CSF_DIR,
   COMPROBANTES_DIR,
   COMPROBANTES_PROVEEDOR_DIR,
   REPORTES_PAGO_DIR,
+  FACTURAS_DIR,
 };

@@ -18,6 +18,7 @@ const usuarioRoutes = require('./routes/usuarioRoutes');
 const portalAuthRoutes = require('./routes/portalAuthRoutes');
 const portalRoutes = require('./routes/portalRoutes');
 const reportePagoRoutes = require('./routes/reportePagoRoutes');
+const facturaRoutes = require('./routes/facturaRoutes');
 const requireAuth = require('./middleware/requireAuth');
 const requirePortalAuth = require('./middleware/requirePortalAuth');
 
@@ -39,6 +40,7 @@ app.use('/api/proveedores', requireAuth, proveedorRoutes);
 app.use('/api/pagos-proveedores', requireAuth, pagoProveedorRoutes);
 app.use('/api/usuarios', requireAuth, usuarioRoutes);
 app.use('/api/reportes-pago', requireAuth, reportePagoRoutes);
+app.use('/api/facturas', requireAuth, facturaRoutes);
 
 app.use('/api/portal/auth', portalAuthRoutes);
 app.use('/api/portal', requirePortalAuth, portalRoutes);

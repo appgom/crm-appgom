@@ -32,6 +32,14 @@ export default function PortalDashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const saldosValidos = Object.values(saldos).filter(Boolean);
+  const saldoPendienteTotal = saldosValidos.reduce((sum, s) => sum + (s.al_corriente ? 0 : s.saldo_pendiente), 0);
+  const diasAtrasoMax = saldosValidos.reduce((max, s) => Math.max(max, s.dias_atraso || 0), 0);
+  const proximoVencimiento = contratos
+    .filter((c) => c.estatus === 'activo')
+    .map((c) => c.fecha_proximo_vencimiento)
+    .sort()[0];
+
   return (
     <PortalLayout>
       <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Mis contratos</h2>
@@ -39,6 +47,33 @@ export default function PortalDashboardPage() {
 
       {error && <p className="text-status-error mb-4">{error}</p>}
       {loading && <p className="text-secondary">Cargando...</p>}
+
+      {!loading && !error && contratos.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Saldo pendiente total</p>
+            <p className={`text-xl font-bold ${saldoPendienteTotal > 0 ? 'text-status-warning' : 'text-status-success'}`}>
+              {formatMoney(saldoPendienteTotal)}
+            </p>
+          </div>
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Próximo vencimiento</p>
+            <p className="text-xl font-bold text-on-surface">
+              {proximoVencimiento
+                ? new Date(proximoVencimiento).toLocaleDateString('es-MX', { timeZone: 'UTC' })
+                : '—'}
+            </p>
+          </div>
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Días de atraso</p>
+            {diasAtrasoMax > 0 ? (
+              <p className="text-xl font-bold text-status-error">{diasAtrasoMax}d</p>
+            ) : (
+              <p className="text-xl font-bold text-status-success">Al corriente</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {!loading && contratos.length === 0 && (
         <p className="text-secondary">Aún no tienes contratos activos.</p>

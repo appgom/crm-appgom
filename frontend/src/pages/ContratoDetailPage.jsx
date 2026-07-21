@@ -27,6 +27,7 @@ export default function ContratoDetailPage() {
   const [servicio, setServicio] = useState(null);
   const [saldo, setSaldo] = useState(null);
   const [pagos, setPagos] = useState([]);
+  const [facturas, setFacturas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -36,17 +37,19 @@ export default function ContratoDetailPage() {
     setLoading(true);
     try {
       const contratoData = await api.get(`/contratos/${id}`);
-      const [clienteData, serviciosData, saldoData, pagosData] = await Promise.all([
+      const [clienteData, serviciosData, saldoData, pagosData, facturasData] = await Promise.all([
         api.get(`/clientes/${contratoData.cliente_id}`),
         api.get('/catalogo-servicios'),
         api.get(`/contratos/${id}/saldo`),
         api.get(`/contratos/${id}/pagos`),
+        api.get(`/facturas/contrato/${id}`),
       ]);
       setContrato(contratoData);
       setCliente(clienteData);
       setServicio(serviciosData.find((s) => s.id === contratoData.tipo_servicio_id));
       setSaldo(saldoData);
       setPagos(pagosData);
+      setFacturas(facturasData);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -288,6 +291,49 @@ export default function ContratoDetailPage() {
         )}
       </div>
 
+      <div className="bg-surface-container-lowest border border-border-subtle rounded-xl overflow-hidden mt-10">
+        <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+          <h3 className="font-title-lg text-title-lg text-on-surface">Facturas</h3>
+          <FacturaUploadButton contratoId={id} onSubido={cargarDatos} />
+        </div>
+        {facturas.length === 0 ? (
+          <p className="px-6 py-6 text-secondary">Sin facturas subidas todavía.</p>
+        ) : (
+          <div className="divide-y divide-border-subtle">
+            {facturas.map((f) => (
+              <div key={f.id} className="p-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-on-surface">{f.nombre_original}</p>
+                  <p className="text-xs text-text-muted">
+                    Subida el {new Date(f.created_at).toLocaleDateString('es-MX')}
+                    {f.fecha_emision ? ` · Emisión: ${new Date(f.fecha_emision).toLocaleDateString('es-MX', { timeZone: 'UTC' })}` : ''}
+                    {f.monto != null ? ` · ${formatMoney(f.monto)}` : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <a
+                    href={`${BASE_URL}/facturas/${f.id}/descarga`}
+                    className="text-action-blue hover:underline flex items-center gap-1 text-sm font-semibold"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">download</span>
+                    Descargar
+                  </a>
+                  <button
+                    onClick={async () => {
+                      await api.delete(`/facturas/${f.id}`);
+                      cargarDatos();
+                    }}
+                    className="text-status-error hover:underline text-sm font-semibold"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {showModal && (
         <RegistrarPagoModal
           clienteId={cliente?.id}
@@ -314,5 +360,93 @@ function Field({ label, value, className = '' }) {
       <p className="text-text-muted font-label-md text-label-md mb-1 uppercase tracking-wider">{label}</p>
       <p className={`font-body-md text-body-md font-bold text-on-surface ${className}`}>{value}</p>
     </div>
+  );
+}
+
+function FacturaUploadButton({ contratoId, onSubido }) {
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [archivo, setArchivo] = useState(null);
+  const [monto, setMonto] = useState('');
+  const [fechaEmision, setFechaEmision] = useState('');
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!archivo) {
+      setError('Selecciona el archivo de la factura.');
+      return;
+    }
+    setSubiendo(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('archivo', archivo);
+      if (monto) formData.append('monto', monto);
+      if (fechaEmision) formData.append('fecha_emision', fechaEmision);
+      await api.upload(`/facturas/contrato/${contratoId}`, formData);
+      setMostrarForm(false);
+      setArchivo(null);
+      setMonto('');
+      setFechaEmision('');
+      onSubido();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  if (!mostrarForm) {
+    return (
+      <button
+        onClick={() => setMostrarForm(true)}
+        className="px-4 py-2 bg-action-blue text-white rounded-lg font-semibold hover:opacity-90 transition-all flex items-center gap-2 text-sm"
+      >
+        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+        Subir factura
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
+      {error && <p className="text-status-error text-xs w-full">{error}</p>}
+      <input
+        type="file"
+        required
+        accept=".pdf,.png,.jpg,.jpeg"
+        className="text-xs"
+        onChange={(e) => setArchivo(e.target.files[0] || null)}
+      />
+      <input
+        type="number"
+        step="0.01"
+        placeholder="Monto (opcional)"
+        className="w-32 bg-surface-base border border-border-subtle rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-action-blue"
+        value={monto}
+        onChange={(e) => setMonto(e.target.value)}
+      />
+      <input
+        type="date"
+        className="bg-surface-base border border-border-subtle rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-action-blue"
+        value={fechaEmision}
+        onChange={(e) => setFechaEmision(e.target.value)}
+      />
+      <button
+        type="submit"
+        disabled={subiendo}
+        className="px-3 py-1.5 bg-action-blue text-white rounded-lg font-semibold text-xs hover:opacity-90 disabled:opacity-50"
+      >
+        {subiendo ? 'Subiendo...' : 'Guardar'}
+      </button>
+      <button
+        type="button"
+        onClick={() => setMostrarForm(false)}
+        className="px-3 py-1.5 border border-border-subtle text-secondary rounded-lg font-semibold text-xs hover:bg-surface-base"
+      >
+        Cancelar
+      </button>
+    </form>
   );
 }

@@ -1,8 +1,11 @@
+const path = require('path');
 const contratoModel = require('../models/contratoModel');
 const cargoModel = require('../models/cargoModel');
 const pagoModel = require('../models/pagoModel');
 const reporteModel = require('../models/reportePagoModel');
+const facturaModel = require('../models/facturaModel');
 const { calcularSaldo } = require('../services/contratoSaldoService');
+const { FACTURAS_DIR } = require('../config/upload');
 
 async function misContratos(req, res) {
   const contratos = await contratoModel.findByClienteIdConServicio(req.cliente.id);
@@ -65,4 +68,30 @@ async function reportarPago(req, res) {
   res.status(201).json(reporte);
 }
 
-module.exports = { misContratos, contratoDetalle, contratoSaldo, misPagos, misReportesPago, reportarPago };
+async function misFacturas(req, res) {
+  const facturas = await facturaModel.findByClienteId(req.cliente.id);
+  res.json(facturas);
+}
+
+async function descargarFactura(req, res) {
+  const factura = await facturaModel.findById(req.params.id);
+  if (!factura) return res.status(404).json({ error: 'Factura no encontrada' });
+
+  const contrato = await contratoModel.findById(factura.contrato_id);
+  if (!contrato || contrato.cliente_id !== req.cliente.id) {
+    return res.status(404).json({ error: 'Factura no encontrada' });
+  }
+
+  res.download(path.join(FACTURAS_DIR, factura.nombre_archivo), factura.nombre_original);
+}
+
+module.exports = {
+  misContratos,
+  contratoDetalle,
+  contratoSaldo,
+  misPagos,
+  misReportesPago,
+  reportarPago,
+  misFacturas,
+  descargarFactura,
+};

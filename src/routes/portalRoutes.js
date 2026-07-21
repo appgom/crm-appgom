@@ -11,5 +11,7 @@ router.get('/contratos/:id/saldo', asyncHandler(portalController.contratoSaldo))
 router.get('/pagos', asyncHandler(portalController.misPagos));
 router.get('/reportes-pago', asyncHandler(portalController.misReportesPago));
 router.post('/reportes-pago', uploadReportePago.single('comprobante'), asyncHandler(portalController.reportarPago));
+router.get('/facturas', asyncHandler(portalController.misFacturas));
+router.get('/facturas/:id/descarga', asyncHandler(portalController.descargarFactura));
 
 module.exports = router;

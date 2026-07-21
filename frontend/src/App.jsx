@@ -19,6 +19,8 @@ import PortalSolicitarResetPage from './pages/portal/PortalSolicitarResetPage';
 import PortalRestablecerPage from './pages/portal/PortalRestablecerPage';
 import PortalDashboardPage from './pages/portal/PortalDashboardPage';
 import PortalContratoDetailPage from './pages/portal/PortalContratoDetailPage';
+import PortalPagosPage from './pages/portal/PortalPagosPage';
+import PortalFacturasPage from './pages/portal/PortalFacturasPage';
 import { ES_SUBDOMINIO_PORTAL, PORTAL_BASE, PORTAL_HOME } from './utils/portalBase';
 
 function RequireAuth({ children }) {
@@ -86,6 +88,8 @@ function PortalRoutes() {
       <Route path="restablecer" element={<PortalRestablecerPage />} />
       <Route path="" element={<RequirePortalAuth><PortalDashboardPage /></RequirePortalAuth>} />
       <Route path="contratos/:id" element={<RequirePortalAuth><PortalContratoDetailPage /></RequirePortalAuth>} />
+      <Route path="pagos" element={<RequirePortalAuth><PortalPagosPage /></RequirePortalAuth>} />
+      <Route path="facturas" element={<RequirePortalAuth><PortalFacturasPage /></RequirePortalAuth>} />
     </Routes>
   );
 }
