@@ -27,6 +27,8 @@ export default function NuevoContratoPage() {
     modalidad_facturacion: 'recurrente',
     estatus: 'activo',
   });
+  const [montoOriginal, setMontoOriginal] = useState(null);
+  const [aplicarMontoDesde, setAplicarMontoDesde] = useState('');
   const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -54,16 +56,27 @@ export default function NuevoContratoPage() {
             modalidad_facturacion: contratoData.modalidad_facturacion,
             estatus: contratoData.estatus,
           });
+          setMontoOriginal(Number(contratoData.monto));
         }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
 
+  const requierePreguntarAplicacion =
+    esEdicion &&
+    form.modalidad_facturacion === 'recurrente' &&
+    montoOriginal !== null &&
+    Number(form.monto) !== montoOriginal;
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.cliente_id) {
       setError('Selecciona un cliente válido de la lista de resultados.');
+      return;
+    }
+    if (requierePreguntarAplicacion && !aplicarMontoDesde) {
+      setError('Indica desde cuándo aplica el nuevo monto: el cobro actual o el próximo periodo.');
       return;
     }
     setSaving(true);
@@ -74,6 +87,7 @@ export default function NuevoContratoPage() {
         cliente_id: Number(form.cliente_id),
         tipo_servicio_id: Number(form.tipo_servicio_id),
         monto: Number(form.monto),
+        ...(requierePreguntarAplicacion ? { aplicar_monto_desde: aplicarMontoDesde } : {}),
       };
       const contrato = esEdicion
         ? await api.put(`/contratos/${id}`, payload)
@@ -175,6 +189,33 @@ export default function NuevoContratoPage() {
                   onChange={(e) => setForm({ ...form, monto: e.target.value })}
                 />
               </div>
+              {requierePreguntarAplicacion && (
+                <div className="mt-3 space-y-2 bg-surface-base border border-border-subtle rounded-lg p-3">
+                  <p className="text-xs font-semibold text-secondary">¿Desde cuándo aplica este nuevo monto?</p>
+                  <label className="flex items-start gap-2 text-sm text-on-surface cursor-pointer">
+                    <input
+                      type="radio"
+                      name="aplicar_monto_desde"
+                      value="actual"
+                      checked={aplicarMontoDesde === 'actual'}
+                      onChange={(e) => setAplicarMontoDesde(e.target.value)}
+                      className="mt-1"
+                    />
+                    Desde el cobro actual (en curso)
+                  </label>
+                  <label className="flex items-start gap-2 text-sm text-on-surface cursor-pointer">
+                    <input
+                      type="radio"
+                      name="aplicar_monto_desde"
+                      value="proximo"
+                      checked={aplicarMontoDesde === 'proximo'}
+                      onChange={(e) => setAplicarMontoDesde(e.target.value)}
+                      className="mt-1"
+                    />
+                    A partir del próximo periodo
+                  </label>
+                </div>
+              )}
             </div>
             <div>
               <label className="block font-label-md text-label-md text-secondary mb-2">Modalidad de facturación</label>

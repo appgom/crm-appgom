@@ -72,9 +72,23 @@ async function update(req, res) {
   // para que el saldo y los dias de atraso no queden desincronizados.
   const cargoPendiente = await cargoModel.findPendienteActual(contrato.id);
   if (cargoPendiente) {
+    // El monto puede subir/bajar de precio a mitad de un contrato recurrente.
+    // aplicar_monto_desde deja elegir explicitamente si el cambio afecta el
+    // cobro que ya esta en curso o solo empieza a regir el proximo periodo;
+    // si no se especifica, se conserva el comportamiento previo (solo se
+    // toca el cargo si aun no tiene ningun pago aplicado).
+    let aplicarMontoAhora;
+    if (body.aplicar_monto_desde === 'actual') {
+      aplicarMontoAhora = true;
+    } else if (body.aplicar_monto_desde === 'proximo') {
+      aplicarMontoAhora = false;
+    } else {
+      aplicarMontoAhora = cargoPendiente.estatus === 'pendiente';
+    }
+
     await cargoModel.actualizarPendiente(cargoPendiente.id, {
       fecha_vencimiento: contrato.fecha_proximo_vencimiento,
-      monto: cargoPendiente.estatus === 'pendiente' ? contrato.monto : cargoPendiente.monto,
+      monto: aplicarMontoAhora ? contrato.monto : cargoPendiente.monto,
     });
   }
 
