@@ -19,6 +19,7 @@ import PortalSolicitarResetPage from './pages/portal/PortalSolicitarResetPage';
 import PortalRestablecerPage from './pages/portal/PortalRestablecerPage';
 import PortalDashboardPage from './pages/portal/PortalDashboardPage';
 import PortalContratoDetailPage from './pages/portal/PortalContratoDetailPage';
+import { ES_SUBDOMINIO_PORTAL, PORTAL_BASE, PORTAL_HOME } from './utils/portalBase';
 
 function RequireAuth({ children }) {
   const { usuario, loading } = useAuth();
@@ -67,7 +68,7 @@ function RequirePortalAuth({ children }) {
     return <div className="min-h-screen bg-surface-base" />;
   }
   if (!cliente) {
-    return <Navigate to="/portal/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to={`${PORTAL_BASE}/login`} state={{ from: location.pathname }} replace />;
   }
   return children;
 }
@@ -79,7 +80,7 @@ function PortalRoutes() {
     <Routes>
       <Route
         path="login"
-        element={cliente ? <Navigate to="/portal" replace /> : <PortalLoginPage onLogin={setCliente} />}
+        element={cliente ? <Navigate to={PORTAL_HOME} replace /> : <PortalLoginPage onLogin={setCliente} />}
       />
       <Route path="solicitar-reset" element={<PortalSolicitarResetPage />} />
       <Route path="restablecer" element={<PortalRestablecerPage />} />
@@ -89,27 +90,35 @@ function PortalRoutes() {
   );
 }
 
+function PortalApp() {
+  return (
+    <PortalAuthProvider>
+      <PortalRoutes />
+    </PortalAuthProvider>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route
-          path="/portal/*"
-          element={
-            <PortalAuthProvider>
-              <PortalRoutes />
-            </PortalAuthProvider>
-          }
-        />
-        <Route
-          path="/*"
-          element={
-            <AuthProvider>
-              <AppRoutes />
-            </AuthProvider>
-          }
-        />
-      </Routes>
+      {ES_SUBDOMINIO_PORTAL ? (
+        // portal.appgom.com: el portal vive directo en la raiz, el cliente
+        // nunca ve el dominio del CRM interno.
+        <PortalApp />
+      ) : (
+        <Routes>
+          {/* Compatibilidad con enlaces viejos a crm.appgom.com/portal */}
+          <Route path="/portal/*" element={<PortalApp />} />
+          <Route
+            path="/*"
+            element={
+              <AuthProvider>
+                <AppRoutes />
+              </AuthProvider>
+            }
+          />
+        </Routes>
+      )}
     </BrowserRouter>
   );
 }

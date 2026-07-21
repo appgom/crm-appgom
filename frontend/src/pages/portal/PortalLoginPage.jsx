@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { portalApi } from '../../api/portalClient';
+import { PORTAL_BASE, PORTAL_HOME } from '../../utils/portalBase';
 
 export default function PortalLoginPage({ onLogin }) {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function PortalLoginPage({ onLogin }) {
     try {
       const cliente = await portalApi.post('/portal/auth/login', form);
       onLogin(cliente);
-      navigate('/portal', { replace: true });
+      navigate(PORTAL_HOME, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -58,7 +59,7 @@ export default function PortalLoginPage({ onLogin }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-secondary block">Contraseña</label>
-              <Link to="/portal/solicitar-reset" className="text-xs text-action-blue hover:underline">
+              <Link to={`${PORTAL_BASE}/solicitar-reset`} className="text-xs text-action-blue hover:underline">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>

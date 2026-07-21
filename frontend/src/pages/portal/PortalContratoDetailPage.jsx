@@ -4,6 +4,7 @@ import PortalLayout from '../../components/PortalLayout';
 import { portalApi } from '../../api/portalClient';
 import { etiquetaModalidad } from '../../utils/modalidad';
 import { sumarDias } from '../../utils/fechas';
+import { PORTAL_HOME } from '../../utils/portalBase';
 
 function formatMoney(n) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -74,7 +75,7 @@ export default function PortalContratoDetailPage() {
   return (
     <PortalLayout>
       <div className="flex items-center gap-2 text-secondary mb-6 font-label-md text-label-md">
-        <Link to="/portal" className="hover:text-action-blue">Mis contratos</Link>
+        <Link to={PORTAL_HOME} className="hover:text-action-blue">Mis contratos</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
         <span className="text-on-surface font-semibold">{contrato.tipo_servicio}</span>
       </div>
@@ -152,9 +153,9 @@ export default function PortalContratoDetailPage() {
             <>
               <div className="bg-surface-base border border-border-subtle rounded-lg p-4 mb-4 text-sm space-y-1">
                 <p className="font-semibold text-on-surface mb-2">Datos para transferencia</p>
-                <p className="text-secondary">Banco: <span className="text-on-surface">(pendiente de configurar)</span></p>
-                <p className="text-secondary">CLABE: <span className="text-on-surface">(pendiente de configurar)</span></p>
-                <p className="text-secondary">Beneficiario: <span className="text-on-surface">(pendiente de configurar)</span></p>
+                <p className="text-secondary">Banco: <span className="text-on-surface">Hey Banco (antes Banregio)</span></p>
+                <p className="text-secondary">CLABE: <span className="text-on-surface font-mono-label">167180000055434044</span></p>
+                <p className="text-secondary">Beneficiario: <span className="text-on-surface">APPGOM S.A.S. de C.V.</span></p>
               </div>
 
               {!mostrarFormulario ? (

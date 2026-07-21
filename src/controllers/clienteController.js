@@ -89,7 +89,7 @@ async function habilitarPortal(req, res) {
   const hash = await hashPassword(passwordTemporal);
   await clienteModel.habilitarPortal(cliente.id, hash);
 
-  const url = `${PORTAL_URL}/portal`;
+  const url = PORTAL_URL;
   let correoEnviado = true;
   try {
     await enviarCorreo({

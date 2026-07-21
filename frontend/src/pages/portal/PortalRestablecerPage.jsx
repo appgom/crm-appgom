@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { portalApi } from '../../api/portalClient';
+import { PORTAL_BASE } from '../../utils/portalBase';
 
 export default function PortalRestablecerPage() {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function PortalRestablecerPage() {
     setError(null);
     try {
       await portalApi.post('/portal/auth/restablecer', { token, passwordNueva });
-      navigate('/portal/login', { replace: true });
+      navigate(`${PORTAL_BASE}/login`, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,7 +30,7 @@ export default function PortalRestablecerPage() {
       <div className="min-h-screen bg-surface-base flex items-center justify-center p-6">
         <div className="w-full max-w-sm text-center">
           <p className="text-status-error mb-4">Este enlace no es válido.</p>
-          <Link to="/portal/solicitar-reset" className="text-action-blue hover:underline">
+          <Link to={`${PORTAL_BASE}/solicitar-reset`} className="text-action-blue hover:underline">
             Solicitar un nuevo enlace
           </Link>
         </div>

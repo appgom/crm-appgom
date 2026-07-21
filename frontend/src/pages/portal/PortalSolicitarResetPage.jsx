@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { portalApi } from '../../api/portalClient';
+import { PORTAL_BASE } from '../../utils/portalBase';
 
 export default function PortalSolicitarResetPage() {
   const [email, setEmail] = useState('');
@@ -68,7 +69,7 @@ export default function PortalSolicitarResetPage() {
         )}
 
         <p className="text-center text-sm mt-8">
-          <Link to="/portal/login" className="text-action-blue hover:underline">
+          <Link to={`${PORTAL_BASE}/login`} className="text-action-blue hover:underline">
             Volver a iniciar sesión
           </Link>
         </p>

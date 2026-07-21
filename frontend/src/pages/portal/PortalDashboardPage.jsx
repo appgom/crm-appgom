@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
 import { portalApi } from '../../api/portalClient';
 import { etiquetaModalidad } from '../../utils/modalidad';
+import { PORTAL_BASE } from '../../utils/portalBase';
 
 function formatMoney(n) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -49,7 +50,7 @@ export default function PortalDashboardPage() {
           return (
             <Link
               key={c.id}
-              to={`/portal/contratos/${c.id}`}
+              to={`${PORTAL_BASE}/contratos/${c.id}`}
               className="block bg-surface-card border border-border-subtle rounded-xl p-5 hover:border-action-blue transition-colors"
             >
               <div className="flex items-start justify-between gap-4">
