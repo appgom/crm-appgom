@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
+import RichTextEditor from './RichTextEditor';
+import { insertAtCursor, envolverSeleccion } from '../utils/textInsertion';
 
 export default function PlantillasSection() {
   const [plantillas, setPlantillas] = useState([]);
@@ -97,6 +99,25 @@ function PlantillaForm({ tipo, canal, etiquetaCanal, plantilla, variables, onGua
   const [error, setError] = useState(null);
   const [guardado, setGuardado] = useState(false);
 
+  // Recuerda dónde escribió el admin por última vez (asunto o mensaje) para
+  // que el botón de "insertar variable" sepa en cuál de los dos meter el
+  // placeholder, sin que tenga que hacer clic de nuevo para "enfocar".
+  const campoActivo = useRef('cuerpo');
+  const asuntoRef = useRef(null);
+  const textareaRef = useRef(null); // solo whatsapp (texto plano)
+  const editorRef = useRef(null); // solo email (RichTextEditor)
+
+  function insertarVariable(variable) {
+    const texto = `{{${variable}}}`;
+    if (campoActivo.current === 'asunto' && canal === 'email') {
+      insertAtCursor(asuntoRef.current, texto, setAsunto);
+    } else if (canal === 'email') {
+      editorRef.current?.insertarVariable(texto);
+    } else {
+      insertAtCursor(textareaRef.current, texto, setCuerpo);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
@@ -135,8 +156,10 @@ function PlantillaForm({ tipo, canal, etiquetaCanal, plantilla, variables, onGua
         <div className="space-y-1">
           <label className="text-xs text-secondary block">Asunto</label>
           <input
+            ref={asuntoRef}
             className="w-full bg-surface-container-low border border-border-subtle rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-action-blue"
             value={asunto}
+            onFocus={() => (campoActivo.current = 'asunto')}
             onChange={(e) => setAsunto(e.target.value)}
           />
         </div>
@@ -144,23 +167,62 @@ function PlantillaForm({ tipo, canal, etiquetaCanal, plantilla, variables, onGua
 
       <div className="space-y-1">
         <label className="text-xs text-secondary block">Mensaje</label>
-        <textarea
-          rows={canal === 'email' ? 5 : 3}
-          required
-          className="w-full bg-surface-container-low border border-border-subtle rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-action-blue font-mono-label"
-          value={cuerpo}
-          onChange={(e) => setCuerpo(e.target.value)}
-        />
+        {canal === 'email' ? (
+          <RichTextEditor
+            ref={editorRef}
+            initialValue={cuerpo}
+            onChange={setCuerpo}
+            onFocus={() => (campoActivo.current = 'cuerpo')}
+          />
+        ) : (
+          <div className="border border-border-subtle rounded-lg overflow-hidden bg-surface-container-low">
+            <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border-subtle bg-surface-base">
+              <button
+                type="button"
+                title="Negrita"
+                onClick={() => envolverSeleccion(textareaRef.current, '*', '*', setCuerpo)}
+                className="w-7 h-7 rounded hover:bg-surface-container-low text-sm font-bold text-secondary hover:text-on-surface"
+              >
+                B
+              </button>
+              <button
+                type="button"
+                title="Cursiva"
+                onClick={() => envolverSeleccion(textareaRef.current, '_', '_', setCuerpo)}
+                className="w-7 h-7 rounded hover:bg-surface-container-low text-sm italic text-secondary hover:text-on-surface"
+              >
+                I
+              </button>
+              <span className="text-xs text-text-muted ml-1">WhatsApp usa *negrita* y _cursiva_</span>
+            </div>
+            <textarea
+              ref={textareaRef}
+              rows={3}
+              required
+              onFocus={() => (campoActivo.current = 'cuerpo')}
+              className="w-full bg-transparent px-3 py-2.5 text-sm outline-none text-on-surface"
+              value={cuerpo}
+              onChange={(e) => setCuerpo(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
-      <p className="text-xs text-text-muted">
-        Variables disponibles:{' '}
-        {variables.map((v) => (
-          <code key={v} className="bg-surface-container-low px-1.5 py-0.5 rounded mr-1 font-mono-label">
-            {`{{${v}}}`}
-          </code>
-        ))}
-      </p>
+      <div className="space-y-1.5">
+        <p className="text-xs text-text-muted">Insertar variable:</p>
+        <div className="flex flex-wrap gap-1.5">
+          {variables.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => insertarVariable(v)}
+              className="px-2 py-1 rounded-full text-xs font-mono-label bg-surface-container-low border border-border-subtle text-secondary hover:border-action-blue hover:text-action-blue transition-colors"
+            >
+              {`{{${v}}}`}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex items-center gap-3">
         <button
