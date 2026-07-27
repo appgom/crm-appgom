@@ -3,12 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { ConfirmDialog } from './ClientesPage';
+import PlantillasSection from '../components/PlantillasSection';
 import { api } from '../api/client';
 
 export default function ConfiguracionPage() {
   const { usuario } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get('tab') === 'usuarios' && usuario?.rol === 'admin' ? 'usuarios' : 'catalogo';
+  const tabParam = searchParams.get('tab');
+  const tab = ['usuarios', 'plantillas'].includes(tabParam) && usuario?.rol === 'admin' ? tabParam : 'catalogo';
   function setTab(nuevoTab) {
     setSearchParams(nuevoTab === 'catalogo' ? {} : { tab: nuevoTab });
   }
@@ -69,6 +71,16 @@ export default function ConfiguracionPage() {
             Usuarios
           </button>
         )}
+        {usuario?.rol === 'admin' && (
+          <button
+            onClick={() => setTab('plantillas')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              tab === 'plantillas' ? 'border-action-blue text-action-blue' : 'border-transparent text-secondary hover:text-on-surface'
+            }`}
+          >
+            Plantillas
+          </button>
+        )}
       </div>
 
       {tab === 'catalogo' && (
@@ -112,6 +124,7 @@ export default function ConfiguracionPage() {
       )}
 
       {tab === 'usuarios' && usuario?.rol === 'admin' && <UsuariosSection />}
+      {tab === 'plantillas' && usuario?.rol === 'admin' && <PlantillasSection />}
     </Layout>
   );
 }

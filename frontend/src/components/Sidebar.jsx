@@ -96,6 +96,9 @@ export default function Sidebar({ open, onClose }) {
             {usuario?.rol === 'admin' && (
               <ConfiguracionSubItem tab="usuarios" label="Usuarios" onNavigate={onClose} />
             )}
+            {usuario?.rol === 'admin' && (
+              <ConfiguracionSubItem tab="plantillas" label="Plantillas" onNavigate={onClose} />
+            )}
           </div>
         </nav>
         <div className="px-4 mt-auto pt-4">

@@ -10,6 +10,7 @@ const {
   hashResetToken,
 } = require('../services/portalAuthService');
 const { enviarCorreo } = require('../config/mailer');
+const { renderPlantilla } = require('../services/plantillaService');
 
 const PORTAL_URL = process.env.PORTAL_URL || '';
 
@@ -56,12 +57,16 @@ async function solicitarReset(req, res) {
     const expiraEn = new Date(Date.now() + 60 * 60 * 1000);
     await resetTokenModel.create({ cliente_id: cliente.id, token_hash: tokenHash, expira_en: expiraEn });
 
-    const url = `${PORTAL_URL}/portal/restablecer?token=${token}`;
-    await enviarCorreo({
-      to: cliente.email,
-      subject: 'Restablece tu contraseña — Portal Appgom',
-      html: `<p>Hola ${cliente.nombre},</p><p>Da clic en el siguiente enlace para restablecer tu contraseña (válido por 1 hora):</p><p><a href="${url}">${url}</a></p><p>Si tú no solicitaste esto, ignora este correo.</p>`,
-    }).catch(() => {});
+    // El portal vive en su propio subdominio (portal.appgom.com) con las
+    // rutas montadas en la raiz; el link no lleva prefijo /portal.
+    const url = `${PORTAL_URL}/restablecer?token=${token}`;
+    const plantilla = await renderPlantilla('portal_reset', 'email', {
+      cliente_nombre: cliente.nombre,
+      reset_url: url,
+    });
+    if (plantilla) {
+      await enviarCorreo({ to: cliente.email, subject: plantilla.asunto, html: plantilla.cuerpo }).catch(() => {});
+    }
   }
 
   // La misma respuesta exista o no el correo, para no revelar que cuentas estan registradas.

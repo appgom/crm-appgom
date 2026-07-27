@@ -1,7 +1,10 @@
 const path = require('path');
 const facturaModel = require('../models/facturaModel');
 const contratoModel = require('../models/contratoModel');
+const clienteModel = require('../models/clienteModel');
 const { FACTURAS_DIR } = require('../config/upload');
+const { enviarCorreo } = require('../config/mailer');
+const { renderPlantilla } = require('../services/plantillaService');
 
 async function listarPorContrato(req, res) {
   const facturas = await facturaModel.findByContratoId(req.params.contratoId);
@@ -9,7 +12,7 @@ async function listarPorContrato(req, res) {
 }
 
 async function subir(req, res) {
-  const contrato = await contratoModel.findById(req.params.contratoId);
+  const contrato = await contratoModel.findByIdConServicio(req.params.contratoId);
   if (!contrato) return res.status(404).json({ error: 'Contrato no encontrado' });
   if (!req.file) return res.status(400).json({ error: 'Debes adjuntar el archivo de la factura' });
 
@@ -22,6 +25,17 @@ async function subir(req, res) {
     fecha_emision: fecha_emision || null,
     subido_por: req.usuario.id,
   });
+
+  const cliente = await clienteModel.findById(contrato.cliente_id);
+  const plantilla = await renderPlantilla('factura_subida', 'email', {
+    cliente_nombre: cliente.nombre,
+    tipo_servicio: contrato.tipo_servicio,
+    numero_contrato: contrato.numero_contrato,
+  });
+  if (plantilla) {
+    await enviarCorreo({ to: cliente.email, subject: plantilla.asunto, html: plantilla.cuerpo }).catch(() => {});
+  }
+
   res.status(201).json(factura);
 }
 

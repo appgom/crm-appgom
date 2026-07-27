@@ -2,6 +2,7 @@ const cargoModel = require('../models/cargoModel');
 const notificacionLogModel = require('../models/notificacionLogModel');
 const { enviarCorreo } = require('../config/mailer');
 const { diasDesdeHoy } = require('../utils/diasCalendario');
+const { renderPlantilla } = require('./plantillaService');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
@@ -31,41 +32,11 @@ function diasDeMomento(momento) {
   return match ? Number(match[1]) : null;
 }
 
-function asunto(cargo, momento) {
-  if (momento === 'vencimiento') return `Tu pago de ${cargo.tipo_servicio} vence hoy`;
-  if (momento === 'vencido') return `Pago vencido: ${cargo.tipo_servicio}`;
+function situacionTexto(momento) {
+  if (momento === 'vencimiento') return 'vence hoy';
+  if (momento === 'vencido') return 'venció';
   const dias = diasDeMomento(momento);
-  return `Recordatorio: tu pago de ${cargo.tipo_servicio} vence en ${dias} día${dias === 1 ? '' : 's'}`;
-}
-
-function cuerpoCliente(cargo, momento) {
-  const monto = Number(cargo.monto).toFixed(2);
-  const fecha = new Date(cargo.fecha_vencimiento).toLocaleDateString('es-MX');
-  let mensaje;
-  if (momento === 'vencimiento') {
-    mensaje = `El pago de <strong>${cargo.tipo_servicio}</strong> por <strong>$${monto}</strong> vence hoy (${fecha}).`;
-  } else if (momento === 'vencido') {
-    mensaje = `El pago de <strong>${cargo.tipo_servicio}</strong> por <strong>$${monto}</strong> venció el ${fecha}. Por favor regulariza tu cuenta.`;
-  } else {
-    const dias = diasDeMomento(momento);
-    mensaje = `Te recordamos que el pago de <strong>${cargo.tipo_servicio}</strong> por <strong>$${monto}</strong> vence en ${dias} día${dias === 1 ? '' : 's'} (${fecha}).`;
-  }
-  return `<p>Hola ${cargo.cliente_nombre},</p><p>${mensaje}</p>`;
-}
-
-function cuerpoAdmin(cargo, momento) {
-  const monto = Number(cargo.monto).toFixed(2);
-  const fecha = new Date(cargo.fecha_vencimiento).toLocaleDateString('es-MX');
-  let mensaje;
-  if (momento === 'vencimiento') {
-    mensaje = `El contrato de ${cargo.tipo_servicio} de ${cargo.cliente_nombre} vence hoy (${fecha}), monto $${monto}.`;
-  } else if (momento === 'vencido') {
-    mensaje = `El contrato de ${cargo.tipo_servicio} de ${cargo.cliente_nombre} está vencido desde ${fecha}, monto $${monto}.`;
-  } else {
-    const dias = diasDeMomento(momento);
-    mensaje = `El contrato de ${cargo.tipo_servicio} de ${cargo.cliente_nombre} vence en ${dias} día${dias === 1 ? '' : 's'} (${fecha}), monto $${monto}.`;
-  }
-  return `<p>${mensaje}</p>`;
+  return `vence en ${dias} día${dias === 1 ? '' : 's'}`;
 }
 
 async function enviarSiCorresponde(cargo) {
@@ -75,26 +46,33 @@ async function enviarSiCorresponde(cargo) {
 
   const resultado = { cargoId: cargo.cargo_id, momento, cliente: false, admin: false };
 
+  const variables = {
+    cliente_nombre: cargo.cliente_nombre,
+    tipo_servicio: cargo.tipo_servicio,
+    monto: Number(cargo.monto).toFixed(2),
+    fecha: new Date(cargo.fecha_vencimiento).toLocaleDateString('es-MX'),
+    situacion_texto: situacionTexto(momento),
+  };
+
   const clienteYaEnviado = await notificacionLogModel.yaEnviada({
     cargoId: cargo.cargo_id,
     momento,
     tipo: 'recordatorio_cliente',
   });
   if (!clienteYaEnviado) {
-    await enviarCorreo({
-      to: cargo.cliente_email,
-      subject: asunto(cargo, momento),
-      html: cuerpoCliente(cargo, momento),
-    });
-    await notificacionLogModel.registrar({
-      contratoId: cargo.contrato_id,
-      cargoId: cargo.cargo_id,
-      momento,
-      tipo: 'recordatorio_cliente',
-      canal: 'email',
-      estatusEnvio: 'enviado',
-    });
-    resultado.cliente = true;
+    const plantilla = await renderPlantilla('recordatorio_cliente', 'email', variables);
+    if (plantilla) {
+      await enviarCorreo({ to: cargo.cliente_email, subject: plantilla.asunto, html: plantilla.cuerpo });
+      await notificacionLogModel.registrar({
+        contratoId: cargo.contrato_id,
+        cargoId: cargo.cargo_id,
+        momento,
+        tipo: 'recordatorio_cliente',
+        canal: 'email',
+        estatusEnvio: 'enviado',
+      });
+      resultado.cliente = true;
+    }
   }
 
   const adminYaEnviado = await notificacionLogModel.yaEnviada({
@@ -103,20 +81,19 @@ async function enviarSiCorresponde(cargo) {
     tipo: 'alerta_admin',
   });
   if (!adminYaEnviado && ADMIN_EMAIL) {
-    await enviarCorreo({
-      to: ADMIN_EMAIL,
-      subject: `[Admin] ${asunto(cargo, momento)}`,
-      html: cuerpoAdmin(cargo, momento),
-    });
-    await notificacionLogModel.registrar({
-      contratoId: cargo.contrato_id,
-      cargoId: cargo.cargo_id,
-      momento,
-      tipo: 'alerta_admin',
-      canal: 'email',
-      estatusEnvio: 'enviado',
-    });
-    resultado.admin = true;
+    const plantilla = await renderPlantilla('alerta_admin_vencimiento', 'email', variables);
+    if (plantilla) {
+      await enviarCorreo({ to: ADMIN_EMAIL, subject: plantilla.asunto, html: plantilla.cuerpo });
+      await notificacionLogModel.registrar({
+        contratoId: cargo.contrato_id,
+        cargoId: cargo.cargo_id,
+        momento,
+        tipo: 'alerta_admin',
+        canal: 'email',
+        estatusEnvio: 'enviado',
+      });
+      resultado.admin = true;
+    }
   }
 
   return resultado;

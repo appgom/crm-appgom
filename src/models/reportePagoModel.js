@@ -38,6 +38,22 @@ async function findByClienteId(clienteId) {
   return rows;
 }
 
+// Para notificaciones: incluye datos del cliente y del servicio, ya que el
+// registro crudo de reportes_pago solo tiene los ids.
+async function findByIdConDetalle(id) {
+  const { rows } = await pool.query(
+    `SELECT rp.*, cl.nombre AS cliente_nombre, cl.email AS cliente_email,
+      cs.nombre AS tipo_servicio, c.numero_contrato
+     FROM reportes_pago rp
+     JOIN clientes cl ON cl.id = rp.cliente_id
+     JOIN contratos c ON c.id = rp.contrato_id
+     JOIN catalogo_servicios cs ON cs.id = c.tipo_servicio_id
+     WHERE rp.id = $1`,
+    [id]
+  );
+  return rows[0];
+}
+
 async function findPendientes() {
   const { rows } = await pool.query(
     `SELECT rp.*, cl.nombre AS cliente_nombre, cl.empresa AS cliente_empresa,
@@ -68,4 +84,4 @@ async function rechazar(id, notasAdmin) {
   return rows[0];
 }
 
-module.exports = { create, findById, findByClienteId, findPendientes, confirmar, rechazar };
+module.exports = { create, findById, findByIdConDetalle, findByClienteId, findPendientes, confirmar, rechazar };

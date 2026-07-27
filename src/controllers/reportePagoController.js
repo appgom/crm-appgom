@@ -2,6 +2,8 @@ const path = require('path');
 const reporteModel = require('../models/reportePagoModel');
 const pagoModel = require('../models/pagoModel');
 const { REPORTES_PAGO_DIR } = require('../config/upload');
+const { enviarCorreo } = require('../config/mailer');
+const { renderPlantilla } = require('../services/plantillaService');
 
 async function listPendientes(req, res) {
   const reportes = await reporteModel.findPendientes();
@@ -25,6 +27,18 @@ async function confirmar(req, res) {
   });
 
   const actualizado = await reporteModel.confirmar(reporte.id, pago.id);
+
+  const detalle = await reporteModel.findByIdConDetalle(reporte.id);
+  const plantilla = await renderPlantilla('pago_confirmado', 'email', {
+    cliente_nombre: detalle.cliente_nombre,
+    tipo_servicio: detalle.tipo_servicio,
+    monto: Number(detalle.monto).toFixed(2),
+    fecha: new Date(detalle.fecha).toLocaleDateString('es-MX'),
+  });
+  if (plantilla) {
+    await enviarCorreo({ to: detalle.cliente_email, subject: plantilla.asunto, html: plantilla.cuerpo }).catch(() => {});
+  }
+
   res.json(actualizado);
 }
 
@@ -36,6 +50,18 @@ async function rechazar(req, res) {
   }
 
   const actualizado = await reporteModel.rechazar(reporte.id, req.body.notas);
+
+  const detalle = await reporteModel.findByIdConDetalle(reporte.id);
+  const plantilla = await renderPlantilla('reporte_pago_rechazado', 'email', {
+    cliente_nombre: detalle.cliente_nombre,
+    tipo_servicio: detalle.tipo_servicio,
+    monto: Number(detalle.monto).toFixed(2),
+    motivo: detalle.notas_admin || 'No especificado',
+  });
+  if (plantilla) {
+    await enviarCorreo({ to: detalle.cliente_email, subject: plantilla.asunto, html: plantilla.cuerpo }).catch(() => {});
+  }
+
   res.json(actualizado);
 }
 

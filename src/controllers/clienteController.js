@@ -5,6 +5,7 @@ const cargoModel = require('../models/cargoModel');
 const { CSF_DIR } = require('../config/upload');
 const { hashPassword, generarPasswordTemporal } = require('../services/portalAuthService');
 const { enviarCorreo } = require('../config/mailer');
+const { renderPlantilla } = require('../services/plantillaService');
 
 const PORTAL_URL = process.env.PORTAL_URL || '';
 
@@ -25,6 +26,15 @@ async function create(req, res) {
     return res.status(400).json({ error: 'nombre y email son requeridos' });
   }
   const cliente = await clienteModel.create({ nombre, email, telefono, empresa });
+
+  const plantilla = await renderPlantilla('bienvenida_cliente', 'email', {
+    cliente_nombre: cliente.nombre,
+    empresa: cliente.empresa || '',
+  });
+  if (plantilla) {
+    await enviarCorreo({ to: cliente.email, subject: plantilla.asunto, html: plantilla.cuerpo }).catch(() => {});
+  }
+
   res.status(201).json(cliente);
 }
 
@@ -89,17 +99,19 @@ async function habilitarPortal(req, res) {
   const hash = await hashPassword(passwordTemporal);
   await clienteModel.habilitarPortal(cliente.id, hash);
 
-  const url = PORTAL_URL;
   let correoEnviado = true;
   try {
-    await enviarCorreo({
-      to: cliente.email,
-      subject: 'Acceso a tu portal de cliente — Appgom',
-      html: `<p>Hola ${cliente.nombre},</p>
-        <p>Ya puedes ingresar a tu portal de cliente en <a href="${url}">${url}</a> con estos datos:</p>
-        <p>Correo: ${cliente.email}<br/>Contraseña temporal: <strong>${passwordTemporal}</strong></p>
-        <p>Te recomendamos cambiarla después de tu primer ingreso.</p>`,
+    const plantilla = await renderPlantilla('portal_acceso', 'email', {
+      cliente_nombre: cliente.nombre,
+      cliente_email: cliente.email,
+      portal_url: PORTAL_URL,
+      password_temporal: passwordTemporal,
     });
+    if (plantilla) {
+      await enviarCorreo({ to: cliente.email, subject: plantilla.asunto, html: plantilla.cuerpo });
+    } else {
+      correoEnviado = false;
+    }
   } catch {
     correoEnviado = false;
   }
